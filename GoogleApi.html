@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+        html { height: 100% }
+        body { height: 100%; margin: 0; padding: 0 }
+        #map_canvas { height: 100% }
+    </style>
+    <script type="text/javascript"
+            src="http://maps.googleapis.com/maps/api/js?key=AIzaSyABhNC_z5kz_3LuRnlYRZrlezcOtrcjiZE&sensor=false">
+    </script>
+    <script type="text/javascript"
+            src="js/vendor/jquery-1.9.1.min.js">
+    </script>
+    <script type="text/javascript">
+        var url = 'http://localhost/InteractiveMaps/js/address.json';
+        //var url = 'http://survey-archive.com/InteractiveMaps/js/address.json';
+        var cache_url = 'http://localhost/InteractiveMaps/php/geocache.php';
+        function initialize() {
+            var mapOptions = {
+                center: new google.maps.LatLng(50.468869,30.526886),
+                zoom: 12,
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            };
+            var map = new google.maps.Map(document.getElementById("map_canvas"),
+                    mapOptions);
+            var image = 'img/phone_sm.png';
+            //var myLatLng = new google.maps.LatLng(50.468869,30.526886);
+
+            //var address = "Киев, Фрунзе, 8";
+            //var phone = "+380955066611";
+
+
+
+            $.getJSON(url, function(data) {
+                //alert(data)
+                $.each(data, function(elem,val) {
+                    //alert(val)
+                    var phone = val["title"]
+                    var address = val["address"]
+                    //alert(phone)
+                    codeAddress(address,phone, function (location) {
+                        //alert(JSON.stringify(location));
+                        var latitude = location["lb"];
+                        var longitude = location["mb"];
+                        var myLatLng = new google.maps.LatLng(latitude,longitude);
+                        var beachMarker = new google.maps.Marker({
+                            position: myLatLng,
+                            map: map,
+                            icon: image,
+                            title: phone+";"+address
+                        });
+                    });
+                });
+             });
+
+
+        }
+
+        var geocoder = new google.maps.Geocoder();
+
+
+        function codeAddress(address, phone,callback) {
+            //alert("there");
+            $.get(cache_url,{action:"gt",address:address},function(location){
+                if(location != "Not in cache"){
+                     callback(location);
+                }else{
+                    //alert("start geocoding");
+                    geocoder.geocode({ 'address': address}, function (results, status) {
+                        if (status == google.maps.GeocoderStatus.OK) {
+                            //alert(JSON.stringify(results[0].geometry));
+                            callback(results[0].geometry.location);
+                            var latitude = results[0].geometry.location.lat();
+                            var longitude = results[0].geometry.location.lng();
+
+                            $.get(cache_url,{action:"pt",address:address,long:longitude,lat:latitude});
+                            //    "?action=pt&address="+address+"&long="+longitude+"&lat="+latitude);
+
+                        } else {
+                            alert('Geocode was not successful for the following reason: ' + status);
+                        }
+                    });
+                }
+            });
+        }
+
+    </script>
+</head>
+<body onload="initialize()">
+<div id="map_canvas" style="width:100%; height:100%"></div>
+</body>
+</html>

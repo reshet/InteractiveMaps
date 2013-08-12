@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+        html { height: 100% }
+        body { height: 100%; margin: 0; padding: 0 }
+        #map_canvas { height: 100% }
+    </style>
+    <script type="text/javascript"
+            src="http://maps.googleapis.com/maps/api/js?key=AIzaSyABhNC_z5kz_3LuRnlYRZrlezcOtrcjiZE&sensor=false">
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&libraries=visualization"></script>
+    <script type="text/javascript"
+            src="js/purl.js">
+    </script>
+    <script type="text/javascript"
+            src="js/vendor/jquery-1.9.1.min.js">
+    </script>
+
+    <script type="text/javascript">
+        var map, pointarray1,pointarray2,pointarray3, heatmap1, heatmap2, heatmap3;
+        var url = 'http://localhost/InteractiveMaps/js/addresses_merged_data.json';
+        //var url = 'http://survey-archive.com/InteractiveMaps/js/addresses_merged_data.json';
+        //var cache_url = 'http://localhost/InteractiveMaps/php/geocache.php';
+        //alert("here");
+        //var party = $.url.param('party');
+        var party = purl().param('party');
+        //alert(party.toString());
+        //var cache_url = 'http://survey-archive.com/InteractiveMaps/php/geocache.php';
+        function initialize() {
+            var mapOptions = {
+                center: new google.maps.LatLng(50.468869,30.526886),
+                zoom: 12,
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            };
+            map = new google.maps.Map(document.getElementById("map_canvas"),
+                    mapOptions);
+
+            $.getJSON(url, function(data) {
+                //alert(JSON.stringify(data))
+                var voteData1 = new Array();
+                var voteData2 = new Array();
+                var voteData3 = new Array();
+
+                $.each(data, function(elem,val) {
+                    //alert(JSON.stringify(val))
+                    var phone = val["title"];
+                    var address = val["address"];
+                    var lat = val["lat"];
+                    var lng = val["lng"];
+                    var took_part = val["took_part"];
+                    var live = val["live"];
+
+                    var votes_pr = val["votes_pr"];
+                    var votes_cpu = val["votes_cpu"];
+                    var votes_but = val["votes_but"];
+
+                    var perc1 = 0.0;
+                    var perc2 = 0.0;
+                    var perc3 = 0.0;
+
+                    perc1 = votes_but/took_part;
+                    perc2 = votes_cpu/took_part;
+                    perc3 = votes_pr/took_part;
+                    /*perc1 = votes_but/live;
+                    perc2 = votes_cpu/live;
+                    perc3 = votes_pr/live;*/
+
+
+
+                    if(lat!=null && lng !=null){
+                        var myLatLng = new google.maps.LatLng(lat,lng);
+                        voteData1.push({location:myLatLng,weight:perc1});
+                        voteData2.push({location:myLatLng,weight:perc2});
+                        voteData3.push({location:myLatLng,weight:perc3});
+     }
+                });
+                //alert(voteData.length);
+                pointArray1 = new google.maps.MVCArray(voteData1);
+                pointArray2 = new google.maps.MVCArray(voteData2);
+                pointArray3 = new google.maps.MVCArray(voteData3);
+
+                heatmap1 = new google.maps.visualization.HeatmapLayer({
+                    data: pointArray1
+                });
+                heatmap2 = new google.maps.visualization.HeatmapLayer({
+                    data: pointArray2
+                });
+                heatmap3 = new google.maps.visualization.HeatmapLayer({
+                    data: pointArray3
+                });
+
+                heatmap1.setOptions({radius: 100,opacity:0,dissipating:true});
+                heatmap2.setOptions({radius: 100,opacity:0,dissipating:true});
+                heatmap3.setOptions({radius: 100,opacity:0,dissipating:true});
+
+
+                heatmap1.setMap(map);
+                heatmap2.setMap(map);
+                heatmap3.setMap(map);
+                asyncLooper();
+             });
+       }
+
+        function toggleHeatmap() {
+            heatmap.setMap(heatmap.getMap() ? null : map);
+        }
+        function asyncLooper(){
+
+            var i = 0, howManyTimes = 22;
+            function f() {
+                cycleHeatmap(i);
+                i++;
+                if( i < howManyTimes ){
+                    setTimeout( f, 5000 );
+                }
+            }
+            f();
+
+
+            /*var i = 0;                     //  set your counter to 1
+
+            function myLoop () {           //  create a loop function
+                setTimeout(function () {    //  call a 3s setTimeout when the loop is called
+                    //alert("next map "+i);
+                    i++;                     //  increment the counter
+                    if (i < 12) {            //  if the counter < 10, call the loop function
+                        myLoop();
+                        cycleHeatmap(i);          //  your code here
+                    }                        //  ..  setTimeout()
+                }, 5000)
+            }
+
+            myLoop();*/
+        }
+        function cycleHeatmap(i) {
+               if(i%3 == 0){
+                    //alert("tut")
+                    heatmap1.setOptions({opacity:0.4});
+                    heatmap2.setOptions({opacity:0});
+                    heatmap3.setOptions({opacity:0});
+                   $("div#party").text("БЮТ");
+
+                }else
+                if(i%3 == 1){
+                    heatmap1.setOptions({opacity:0});
+                    heatmap2.setOptions({opacity:0.4});
+                    heatmap3.setOptions({opacity:0});
+                    $("div#party").text("КПУ");
+                }else
+                if(i%3 == 2){
+                    heatmap1.setOptions({opacity:0});
+                    heatmap2.setOptions({opacity:0});
+                    heatmap3.setOptions({opacity:0.4});
+                    $("div#party").text("ПР");
+                }
+           /* if(i%3 == 0){
+                //alert("tut")
+                heatmap1.setMap(map);
+                heatmap2.setMap(null);
+                heatmap3.setMap(null);
+
+            }else
+            if(i%3 == 1){
+                //alert("zdes")
+                heatmap2.setMap(map);
+                heatmap1.setMap(null);
+                heatmap3.setMap(null);
+            }else
+            if(i%3 == 2){
+                //alert("tam")
+                heatmap3.setMap(map);
+                heatmap1.setMap(null);
+                heatmap2.setMap(null);
+            }*/
+         }
+
+        function changeGradient() {
+            var gradient = [
+                'rgba(0, 255, 255, 0)',
+                'rgba(0, 255, 255, 1)',
+                'rgba(0, 191, 255, 1)',
+                'rgba(0, 127, 255, 1)',
+                'rgba(0, 63, 255, 1)',
+                'rgba(0, 0, 255, 1)',
+                'rgba(0, 0, 223, 1)',
+                'rgba(0, 0, 191, 1)',
+                'rgba(0, 0, 159, 1)',
+                'rgba(0, 0, 127, 1)',
+                'rgba(63, 0, 91, 1)',
+                'rgba(127, 0, 63, 1)',
+                'rgba(191, 0, 31, 1)',
+                'rgba(255, 0, 0, 1)'
+            ]
+            heatmap.setOptions({
+                gradient: heatmap.get('gradient') ? null : gradient
+            });
+        }
+
+        function changeRadius() {
+            heatmap.setOptions({radius: heatmap.get('radius') ? null : 20});
+        }
+
+        function changeOpacity() {
+            heatmap.setOptions({opacity: heatmap.get('opacity') ? null : 0.2});
+        }
+
+        google.maps.event.addDomListener(window, 'load', initialize);
+    </script>
+</head>
+<body onload="initialize()">
+<div id="party" style=" font-size: 36;text-align: center">ПАРТИЯ</div>
+<div id="map_canvas" style="width:100%; height:100%">
+
+</div>
+</body>
+</html>

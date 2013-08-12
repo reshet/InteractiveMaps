@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+        html { height: 100% }
+        body { height: 100%; margin: 0; padding: 0 }
+        #map_canvas { height: 100% }
+    </style>
+    <script type="text/javascript"
+            src="js/vendor/jquery-1.9.1.min.js">
+    </script>
+    <script type="text/javascript"
+            src="http://maps.googleapis.com/maps/api/js?key=AIzaSyAB1alQoDJvJ9L5iIojuebZUhkBZeBN9OI&sensor=false">
+    </script>
+
+    <script type="text/javascript">
+        //var url = 'http://localhost/InteractiveMaps/js/addresses_merged_phones_geo.json';
+        var url = 'http://localhost/InteractiveMaps/js/districts_wiki_detailed.json';
+        var infoWindow;
+        var map;
+        //var url = 'http://survey-archive.com/InteractiveMaps/js/polygons_backup219140.json';
+        //var cache_url = 'http://localhost/InteractiveMaps/php/geocache.php';
+        function initialize() {
+            var mapOptions = {
+                center: new google.maps.LatLng(50.468869,30.526886),
+                zoom: 12,
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            };
+            map = new google.maps.Map(document.getElementById("map_canvas"),
+                    mapOptions);
+
+            $.getJSON(url, function(data) {
+                var poly_coords = []
+
+                $.each(data, function(elem,val) {
+                    var title = val["title"]
+                    var bounds = val["bounds"]
+                    $.each(bounds, function(el,vl) {
+                       var point = new google.maps.LatLng(vl["lat"],vl["lng"]);
+                       poly_coords.push(point);
+                    });
+
+                });
+                var voteUnit = new google.maps.Polygon({
+                    paths: poly_coords,
+                    strokeColor: '#FF0000',
+                    strokeOpacity: 0.8,
+                    strokeWeight: 3,
+                    fillColor: '#FF0000',
+                    fillOpacity: 0.35,
+                    title: " !!! "
+                });
+
+                voteUnit.setMap(map);
+                google.maps.event.addListener(voteUnit, 'click', showArrays);
+             });
+
+
+
+            infoWindow = new google.maps.InfoWindow();
+        }
+
+        function showArrays(event) {
+
+            // Since this Polygon only has one path, we can call getPath()
+            // to return the MVCArray of LatLngs
+            var vertices = this.getPath();
+
+            var contentString = '<b>'+this.title+'</b><br>';
+            //contentString += 'Точка: <br>' + event.latLng.lat() + ',' + event.latLng.lng() + '<br>';
+
+            // Iterate over the vertices.
+           /* for (var i =0; i < vertices.getLength(); i++) {
+                var xy = vertices.getAt(i);
+                contentString += '<br>' + 'Координаты: ' + i + '<br>' + xy.lat() +',' + xy.lng();
+            }*/
+
+            // Replace our Info Window's content and position
+            infoWindow.setContent(contentString);
+            infoWindow.setPosition(event.latLng);
+
+            infoWindow.open(map);
+        }
+
+    </script>
+</head>
+<body onload="initialize()">
+<div id="map_canvas" style="width:100%; height:100%"></div>
+</body>
+</html>
