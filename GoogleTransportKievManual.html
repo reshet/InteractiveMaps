@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+        html { height: 100% }
+        body { height: 100%; margin: 0; padding: 0 }
+        #map_canvas { height: 100% }
+        #panel {
+            position: absolute;
+            top: 5px;
+            left: 20%;
+            margin-left: -180px;
+            z-index: 5;
+            background-color: #fff;
+            padding: 5px;
+            border: 1px solid #999;
+            opacity: 0.8;
+        }
+        #panel_session {
+            position: absolute;
+            top: 5px;
+            left: 80%;
+            margin-right: -120px;
+            z-index: 5;
+            background-color: #fff;
+            padding: 5px;
+            border: 1px solid #999;
+            opacity: 0.8;
+        }
+        .contextmenu{
+            visibility:hidden;
+            background:#ffffff;
+            border:1px solid #8888FF;
+            z-index: 10;
+            position: relative;
+            width: 180px;
+        }
+        .contextmenu div{
+            padding-left: 5px
+        }
+    </style>
+
+    <script type="text/javascript"
+            src="http://maps.googleapis.com/maps/api/js?key=AIzaSyAB1alQoDJvJ9L5iIojuebZUhkBZeBN9OI&language=uk&sensor=false">
+    </script>
+    <script type="text/javascript"
+            src="js/vendor/jquery-1.9.1.min.js">
+    </script>
+    <script type="text/javascript">
+        //var url_data = 'http://localhost/InteractiveMaps/js/addresses_geo3.json';
+        //var url_data = 'http://survey-archive.com/InteractiveMaps/js/addresses_geo3.json';
+        var url_fixer_get = "http://localhost/MSS/FixTransportListApproxGeocodedRandom.php";
+        var url_fixer_save = "http://localhost/MSS/FixGeocodeUpdateTransport.php";
+        //var url_fixer = "http://survey-archive.com/MSS/FixGeocodeSaveTransport.php";
+        var cache_url = 'http://localhost/InteractiveMaps/php/geocache.php';
+        var map;
+        var image;
+        var shape;
+        var geoMarker;
+        var infoWindow;
+
+        var marker_lat;
+        var marker_lng;
+
+        var address;
+        var var_code;
+        var task_id;
+        var int_id;
+        var loc_type;
+        var g_addr;
+        var route;
+        var total_addresses = 0;
+        var changed_addresses = 0;
+        var skipped_addresses = 0;
+
+        var hasChanged = false;
+        var loadNext = function(){
+
+            $.getJSON(url_fixer_get, function(data) {
+                //alert(data);
+                console.log("loading next address...");
+
+                //alert(val)
+                var val = data[0];
+                g_addr = val["geo_addr"]
+                address = val["addr"]
+                var lat = val["lat"]
+                var lng = val["lng"]
+                var_code = val["var_code"]
+                task_id = val["task_id"]
+                int_id = val["int_id"]
+                loc_type = val["geo_type"]
+                route = val["route"];
+               marker_lat = lat;
+                marker_lng = lng;
+                var myLatLng = new google.maps.LatLng(marker_lat,marker_lng);
+                //console.log(g_addr);
+                //document.getElementById("input_address").html = address;
+                $("#input_address").text(''+address);
+                $("#geo_address").text(''+g_addr);
+                $("#interview").text('№'+int_id+" анкеты "+task_id+". "+var_code);
+                if(route != null)$("#route").text("№"+route);
+                else $("#route").text("нет");
+
+                geoMarker = new google.maps.Marker({
+                    position: myLatLng,
+                    map: map,
+                    icon: image,
+                    shape:shape,
+                    title: var_code+": "+address+"; anket "+task_id+"; int "+int_id+"; loc "+loc_type
+                });
+                total_addresses++;
+                $("#stat_total").text(''+total_addresses);
+                hasChanged = false;
+                //if(elem < 2){
+                /* $.ajax({
+                 type:"POST",
+                 url:url_fixer,
+                 data:{
+                 base_var_code:var_code,lat:lat,lng:lng,task_id:task_id,int_id:int_id,
+                 formatted:g_addr,loc_type:loc_type
+                 },
+                 success:function(data){
+                 console.log(total_addresses+" "+ data);
+                 }
+                 }
+                 );*/
+                //}
+
+            });
+        }
+        function initialize() {
+            var mapOptions = {
+                center: new google.maps.LatLng(50.468869,30.526886),
+                zoom: 11,
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            };
+            map = new google.maps.Map(document.getElementById("map_canvas"),
+                    mapOptions);
+
+             image = {
+                url: 'img/arrow-down-small.png',
+                size: new google.maps.Size(40, 86),
+                // The origin for this image is 0,0.
+                origin: new google.maps.Point(0,0),
+                // The anchor for this image is the base of the flagpole at 0,32.
+                anchor: new google.maps.Point(20, 86),
+                opacity:0.5
+            };
+
+            google.maps.event.addListener(map, "rightclick",function(event){showContextMenu(event.latLng);});
+            loadNext();
+
+
+        }
+        function cancel_change(){
+            $('.contextmenu').remove();
+        }
+        function change_marker(lat,lng){
+            $('.contextmenu').remove();
+            console.log(lat);
+            console.log(lng);
+            marker_lat = lat;
+            marker_lng = lng;
+            geoMarker.setMap(null);
+            var myLatLng = new google.maps.LatLng(marker_lat,marker_lng);
+            geoMarker = new google.maps.Marker({
+                position: myLatLng,
+                map: map,
+                icon: image,
+                title: var_code+": "+address+"; anket "+task_id+"; int "+int_id+"; loc "+loc_type
+            });
+            hasChanged = true;
+
+        }
+        function showContextMenu(currentLatLng) {
+            var projection;
+            var contextmenuDir;
+            projection = map.getProjection() ;
+            $('.contextmenu').remove();
+            contextmenuDir = document.createElement("div");
+            contextmenuDir.className  = 'contextmenu';
+            contextmenuDir.innerHTML = '<a id="menu_change" onclick="change_marker('+currentLatLng.lat()+','+currentLatLng.lng()+')"><div class="context">Изменить положение<\/div><\/a>'
+                    + '<a id="menu_cancel" onclick="cancel_change()"><div class="context">Отмена<\/div><\/a>';
+
+            $(map.getDiv()).append(contextmenuDir);
+
+            setMenuXY(currentLatLng);
+
+            contextmenuDir.style.visibility = "visible";
+        }
+        function getCanvasXY(caurrentLatLng){
+            var scale = Math.pow(2, map.getZoom());
+            var nw = new google.maps.LatLng(
+                    map.getBounds().getNorthEast().lat(),
+                    map.getBounds().getSouthWest().lng()
+            );
+            var worldCoordinateNW = map.getProjection().fromLatLngToPoint(nw);
+            var worldCoordinate = map.getProjection().fromLatLngToPoint(caurrentLatLng);
+            var caurrentLatLngOffset = new google.maps.Point(
+                    Math.floor((worldCoordinate.x - worldCoordinateNW.x) * scale),
+                    Math.floor((worldCoordinate.y - worldCoordinateNW.y) * scale)
+            );
+            return caurrentLatLngOffset;
+        }
+        function setMenuXY(caurrentLatLng){
+            var mapWidth = $('#map_canvas').width();
+            var mapHeight = $('#map_canvas').height();
+            var menuWidth = $('.contextmenu').width();
+            var menuHeight = $('.contextmenu').height();
+            var clickedPosition = getCanvasXY(caurrentLatLng);
+            var x = clickedPosition.x ;
+            var y = clickedPosition.y ;
+
+            if((mapWidth - x ) < menuWidth)//if to close to the map border, decrease x position
+                x = x - menuWidth;
+            if((mapHeight - y ) < menuHeight)//if to close to the map border, decrease y position
+                y = y - menuHeight;
+
+            $('.contextmenu').css('left',x  );
+            $('.contextmenu').css('top',y );
+        };
+
+
+        var geocoder = new google.maps.Geocoder();
+
+
+        function codeLatLng(latlng,callback) {
+
+            geocoder.geocode({'location': latlng}, function (results, status) {
+                console.log("geocoding request returns");
+                if (status == google.maps.GeocoderStatus.OK) {
+                    //alert(JSON.stringify(results[0].geometry));
+                    var latitude = results[0].geometry.location.lat();
+                    var longitude = results[0].geometry.location.lng();
+                    var formatted = results[0].formatted_address;
+                    var loc_type = results[0].geometry.location_type;
+                    //console.log(formatted);
+                    $.get(cache_url,
+                            {action:"pt",address:address,long:longitude,lat:latitude,g_address:formatted,type:loc_type},
+                            function(response){
+                                callback(response);
+                            }
+                    );
+                    //    "?action=pt&address="+address+"&long="+longitude+"&lat="+latitude);
+
+                } else {
+                    alert('Geocode was not successful for the following reason: ' + status);
+                }
+            });
+
+        }
+        var saveGeocodeManually = function(){
+
+            var login = $("#login").val();
+            console.log("login: "+login);
+            if(login === ''){
+              alert("Введите логин! Ведется учет вашей работы");
+            }else{
+                var res = true;
+                if(!hasChanged){
+                  res =confirm("Вы не меняли положение маркера. Уверены, что положение правильное?");
+                }
+                if(res){
+                    console.log("Saving");
+                    if(hasChanged){
+                        codeLatLng( new google.maps.LatLng(marker_lat,marker_lng),function(loc){
+                            //console.log(loc);
+                            var location = $.parseJSON(loc);
+                            var latitude = location["lb"];
+                            var longitude = location["mb"];
+                            var g_address = location["address"];
+                            console.log(g_address);
+                            var loc_type = location["loc_type"];
+
+                            actualServerUpdate(g_address,latitude,longitude,login);
+                        });
+                    }else{
+
+                        actualServerUpdate(g_addr,marker_lat,marker_lng,login);
+                    }
+
+                }
+
+            }
+
+        }
+        function actualServerUpdate(address,lat,lng,login){
+            $.ajax({
+                        type:"POST",
+                        url:url_fixer_save,
+                        data:{
+                            base_var_code:var_code,lat:lat,lng:lng,task_id:task_id,int_id:int_id,
+                            formatted:address,loc_type:"MANUAL_"+login
+                        },
+                        success:function(data){
+                            console.log(data);
+                            commitSave();
+                        },
+                        error:function(data){
+                             alert("Ошибка, сообщите администратору: "+JSON.stringify(data));
+                             skipAddress();
+                        }
+                    }
+            );
+        }
+        function commitSave(){
+            geoMarker.setMap(null);
+            loadNext();
+            changed_addresses++;
+            $("#stat_changed").text(''+changed_addresses);
+        }
+        var skipAddress = function(){
+
+            var login = $("#login").val();
+            console.log("login: "+login);
+            if(login === ''){
+                alert("Введите логин! Ведется учет вашей работы");
+            }else{
+                console.log("Skipping");
+                geoMarker.setMap(null);
+                loadNext();
+                skipped_addresses++;
+                $("#stat_skipped").text(''+skipped_addresses);
+            }
+        }
+    </script>
+</head>
+<body onload="initialize()">
+<div id="panel">
+    <table>
+        <tr>
+            <td colspan="2"><b>Ваш логин:</b><input id="login"/>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2"><b>Маршрут: </b><span id="route"></span>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2"><b>Интервью: </b><span id="interview"></span>
+            </td>
+        </tr>
+       <tr>
+          <td colspan="2"><b>Введенный в кпк адрес: </b><span id="input_address"></span>
+          </td>
+       </tr>
+        <tr>
+            <td colspan="2"><b>Геокодированный адрес: </b>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2"><span id="geo_address"></span>
+            </td>
+        </tr>
+
+        <tr>
+           <td>
+               <button id="save" onclick="saveGeocodeManually()">Сохранить и продолжить</button>
+           </td>
+           <td>
+               <button id="skip" onclick="skipAddress()">Пропустить</button>
+           </td>
+       </tr>
+    </table>
+
+</div>
+<div id="panel_session">
+    <table>
+        <tr>
+            <td><b>Изменено:</b><span id="stat_changed"/>
+            </td>
+        </tr>
+        <tr>
+            <td><b>Пропущено:</b><span id="stat_skipped"/>
+            </td>
+        </tr>
+        <tr>
+            <td><b>Всего:</b><span id="stat_total"/>
+            </td>
+        </tr>
+
+    </table>
+</div>
+<div id="map_canvas" style="width:100%; height:100%"></div>
+</body>
+</html>

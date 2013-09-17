@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset='utf-8'/>
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+        html { height: 100% }
+        body { height: 100%; margin: 0; padding: 0 }
+        #map_canvas { height: 100% }
+        #panel {
+            position: absolute;
+            top: 5px;
+            left: 50%;
+            margin-left: -180px;
+            z-index: 5;
+            background-color: #fff;
+            padding: 5px;
+            border: 1px solid #999;
+        }
+        .visited{
+            border: 1px solid #0000ff;
+        }
+        .notvisited{
+            border: 0px solid #0000ff;
+        }
+    </style>
+    <script type="text/javascript"
+            src="js/vendor/jquery-1.9.1.min.js">
+    </script>
+    <script type="text/javascript"
+            src="http://maps.googleapis.com/maps/api/js?key=AIzaSyAB1alQoDJvJ9L5iIojuebZUhkBZeBN9OI&sensor=false">
+    </script>
+
+    <script type="text/javascript">
+        //var url = 'http://localhost/InteractiveMaps/js/addresses_merged_phones_geo.json';
+        //var url_regions = 'http://localhost/InteractiveMaps/js/districts_wiki.json';
+        //var url_data = 'http://localhost/InteractiveMaps/js/ukraine_tigipko_udar.json';
+        var url_data = 'http://survey-archive.com/InteractiveMaps/js/ukraine_tigipko_udar.json';
+        //var url_data_units = 'http://localhost/InteractiveMaps/js/mer2008_data_byunits.json';
+        //var url_regions = 'http://survey-archive.com/InteractiveMaps/js/districts_wiki.json';
+        //var url_data = 'http://survey-archive.com/InteractiveMaps/js/mer2008_data.json';
+        //var url_data_units = 'http://survey-archive.com/InteractiveMaps/js/mer2008_data_byunits.json';
+
+        var infoWindow;
+        var map;
+        var districts_by_candidate = {"ТИГИПКО": {title:"За Тигипко 2010",data:[]},
+            "УДАР": {title:"За Удар 2012",data:[]}
+        };
+
+        //var url = 'http://survey-archive.com/InteractiveMaps/js/polygons_backup219140.json';
+        //var cache_url = 'http://localhost/InteractiveMaps/php/geocache.php';
+        function initialize() {
+            var mapOptions = {
+                center: new google.maps.LatLng(50.468869,30.526886),
+                zoom: 6,
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            };
+            map = new google.maps.Map(document.getElementById("map_canvas"),
+                    mapOptions);
+
+            var image = {
+                url: 'img/uf_icon2.png',
+                size: new google.maps.Size(22, 22),
+                // The origin for this image is 0,0.
+                origin: new google.maps.Point(0,0),
+                // The anchor for this image is the base of the flagpole at 0,32.
+                anchor: new google.maps.Point(0, 22),
+                opacity:0.5
+            };
+            var shape = {
+                coord: [1, 1, 1, 20, 20, 20, 20 , 1],
+                type: 'poly'
+            }
+            //alert("tut");
+            $.getJSON(url_data, function(data) {
+                $.each(data, function(elem,val) {
+                  //alert(JSON.stringify(val));
+                    $.each(districts_by_candidate,function(el,v){
+                         var perc = 0;
+                         if(el == "ТИГИПКО")perc = val["tigipko"]
+                         if(el == "УДАР")perc = val["udar"]
+                         //alert(perc);
+
+                         perc = perc.replace(",",".");
+
+                         perc = parseFloat(perc).toFixed(2);
+                         var address = val["address"]
+                         var lat = val["lat"]
+                         var lng = val["lng"]
+                         var unitid = val["id"]
+                         var myLatLng = new google.maps.LatLng(lat,lng);
+                         /*var beachMarker = new google.maps.Marker({
+                             position: myLatLng,
+                             map: map,
+                             icon: image,
+                             shape:shape,
+                             title: v.title+": "+perc+"%; \n"+
+                             "Участок "+unitid+"\n"+address
+                         });*/
+
+                         var populationOptions = {
+                             strokeColor: '#000000',
+                             strokeOpacity: 0.6,
+                             strokeWeight: 1,
+                             fillColor: setColor(perc),
+                             fillOpacity: 0.35,
+                             map: map,
+                             center: myLatLng,
+                             radius:  20000,
+                             title: v.title+": "+perc+"%; <br/>"+
+                                     "Участок "+unitid+"<br/>"+address
+                         };
+
+                         var voteCircle = new google.maps.Circle(populationOptions);
+                        google.maps.event.addListener(voteCircle, 'click', showArrays);
+                         //v.data.push(beachMarker);
+                         v.data.push(voteCircle);
+                     });
+                });
+                chooseMap("ТИГИПКО");
+            });
+            //alert("this");
+            //loadData();
+            infoWindow = new google.maps.InfoWindow();
+        }
+        function loadData(){
+            //alert("indide");
+
+                //$.each(data, function(elem,val) {
+                   //alert);
+                   /*$.each(districts_by_candidate,function(el,v){
+                       var perc = 0;
+                       if(el == "ТИГИПКО")perc = val["tigipko"]
+                       if(el == "УДАР")perc = val["udar"]
+                       alert(perc);
+
+                       perc = perc.replace(",",".");
+
+                       perc = parseFloat(perc).toFixed(2);
+                       var address = val["address"]
+                       var lat = val["lat"]
+                       var lng = val["lng"]
+                       var unitid = val["id"]
+                       var myLatLng = new google.maps.LatLng(lat,lng);
+                       var beachMarker = new google.maps.Marker({
+                           position: myLatLng,
+                           map: map,
+                           icon: image,
+                           shape:shape,
+                           title: "За: "+perc+"%; \n"+
+                                   "Участок "+unitid+"\n"+address
+                       });
+                      *//*  var populationOptions = {
+                            strokeColor: '#FF0000',
+                            strokeOpacity: 0.8,
+                            strokeWeight: 2,
+                            fillColor: '#FF0000',
+                            fillOpacity: 0.35,
+                            map: map,
+                            center: myLatLng,
+                            radius:  20
+                        };
+
+                        var voteCircle = new google.maps.Circle(populationOptions);
+                        v.data.push(voteCircle);*//*
+                    });*/
+
+                //});
+                //chooseMap("ТИГИПКО");
+            //});
+        }
+
+        function setColor(p){
+            var red = 0;
+            if(p < 5) red = 20;
+            else if(p < 10) red = 80;
+            else if(p < 15) red = 150;
+            else red = 255;
+              //var green = p>50 ? 255 : Math.round((p)*5.12);
+            return "rgb(" + red + "," + 125 + ",0)";
+        }
+        function setColorWithAcc(p,max,min){
+            var shred = (Number(max)+Number(min))/2;
+            //alert(shred);
+            var red = p<shred ? 255 : Math.round(256 - (p-shred)*(512/shred*2));
+            var green = p>shred ? 255 : Math.round(256 - p*(512/shred*2));
+            return "rgb(" + red + "," + green + ",0)";
+        }
+
+        function showArrays(event) {
+
+            // Since this Polygon only has one path, we can call getPath()
+            // to return the MVCArray of LatLngs
+            //var vertices = this.getPath();
+
+            var contentString = '<p>'+this.title+'</p>';
+            //contentString += this.rate_text +" "+ this.rate+'%<br>';
+
+            // Iterate over the vertices.
+           /* for (var i =0; i < vertices.getLength(); i++) {
+                var xy = vertices.getAt(i);
+                contentString += '<br>' + 'Координаты: ' + i + '<br>' + xy.lat() +',' + xy.lng();
+            }*/
+
+            // Replace our Info Window's content and position
+            infoWindow.setContent(contentString);
+            infoWindow.setPosition(event.latLng);
+
+            infoWindow.open(map);
+        }
+
+     function chooseMap(candidate){
+         //alert(districts_by_candidate.КЛИЧКО.data[0].toString());
+         //alert(candidate);
+
+         //alert(id)
+         $.each(districts_by_candidate,function(elem,val){
+             var element = document.getElementById(elem);
+             //alert(element.id);
+             if(elem == candidate) {
+                 element.className = "visited";
+             }else
+                 element.className = "notvisited";
+
+             for(var i = 0; i < val.data.length;i++)
+             {
+                 if(elem == candidate) {
+                     //alert("MATCH!");
+                     //alert(val.data[i].rate_text);
+                     val.data[i].setMap(map);
+                 }else
+                     val.data[i].setMap(null);
+                 //alert(elem);
+
+             }
+             /*$.each(val.data,function(el,v){
+                 alert(v);
+
+             });*/
+         });
+     }
+
+    </script>
+</head>
+<body onload="initialize()">
+<div id="panel">
+    <button id="ТИГИПКО" onclick="chooseMap('ТИГИПКО')" class="visited">Тигипко 2010</button>
+    <button id="УДАР" onclick="chooseMap('УДАР')" class="notvisited">Удар 2012</button>
+</div>
+<div id="map_canvas" style="width:100%; height:100%"></div>
+</body>
+</html>

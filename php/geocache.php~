@@ -9,34 +9,31 @@
     	//echo "there";
     	$file = fopen("geocache3.csv", "r");
     	$members = array();
-    	if($file!=false){
-    		while (!feof($file)) {
-	    		$line = fgets($file);
-	    		//$line = str_replace(' ', '', $line);
-	    		$line_arr = split(";",$line);
-	    		//var_dump($line_arr);
-	    		if(count($line_arr)>2){
-	
-	                $addr = $line_arr[0];
-	                $long = $line_arr[1];
-	                $lat = $line_arr[2];
-	
-	                $members[$addr]['lat'] = $lat;
-	                $members[$addr]['long'] = $long;
-	                if(count($line_arr)>3){
-	                        $g_addr = $line_arr[3];
-	                        $members[$addr]['g_addr'] = $g_addr;
-	                }
-	 				if(count($line_arr)>4){
-	                        $type = $line_arr[4];
-	                        $members[$addr]['type'] = $type;
-	                }
-	
-	            }
-	    	}
-	    	
-    	fclose($file);
+    	while (!feof($file)) {
+    		$line = fgets($file);
+    		//$line = str_replace(' ', '', $line);
+    		$line_arr = split(";",$line);
+    		//var_dump($line_arr);
+    		if(count($line_arr)>2){
+
+                $addr = $line_arr[0];
+                $long = $line_arr[1];
+                $lat = $line_arr[2];
+
+                $members[$addr]['lat'] = $lat;
+                $members[$addr]['long'] = $long;
+                if(count($line_arr)>3){
+                        $g_addr = $line_arr[3];
+                        $members[$addr]['g_addr'] = $g_addr;
+                }
+ 		if(count($line_arr)>4){
+                        $type = $line_arr[4];
+                        $members[$addr]['type'] = $type;
+                }
+
+            }
     	}
+    	fclose($file);
     	return $members;
     }
     
@@ -56,6 +53,7 @@
             $lat = str_replace(' ', '', $lat);
             $lat = str_replace("\r", '', $lat);
             $lat = str_replace("\n", '', $lat);
+	    $g_address = str_replace(' ', '', $g_address);
 	    $g_address = str_replace('"', '', $g_address);
             $g_address = str_replace("\r", '', $g_address);
             $g_address = str_replace("\n", '', $g_address);
@@ -63,7 +61,7 @@
             $type = str_replace("\n", '', $type);
 
             header('Content-type: application/json');
-            echo '{"lb":'.$lat.',"mb":'.$long.',"address":"'.$g_address.'","loc_type":"'.$type.'"}';
+            echo '{"lb":'.$lat.',"mb":'.$long.',"address":"'.$g_address.',"loc_type":"'.$type.'"}';
             //"{'lb':50.467517,'mb':30.509281999999985}"
             //{"lb":50.4671272,"mb":30.50892859999999}
             //{"lb":50.4671272,"mb":30.50892859999999}
@@ -83,7 +81,7 @@
           if(!array_key_exists($address,$arr)){
              file_put_contents('geocache3.csv', "$address;$long;$lat;$g_address;$type\n",FILE_APPEND);
           }
-           echo '{"lb":'.$lat.',"mb":'.$long.',"address":"'.$g_address.'","loc_type":"'.$type.'"}';
+           echo '{"lb":'.$lat.',"mb":'.$long.',"address":"'.$g_address.',"loc_type":"'.$type.'"}';
     }
     
     //echo $long." ".$lat." ".$address;

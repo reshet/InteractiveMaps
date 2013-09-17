@@ -11,11 +11,17 @@
             position: absolute;
             top: 5px;
             left: 50%;
-            margin-left: -180px;
+            margin-left: -380px;
             z-index: 5;
             background-color: #fff;
             padding: 5px;
             border: 1px solid #999;
+        }
+        .visited{
+            border: 1px solid #0000ff;
+        }
+        .notvisited{
+            border: 0px solid #0000ff;
         }
     </style>
     <script type="text/javascript"
@@ -30,18 +36,25 @@
 
     <script type="text/javascript">
         //var url = 'http://localhost/InteractiveMaps/js/addresses_merged_phones_geo.json';
-        var url_regions = 'http://localhost/InteractiveMaps/js/districts_wiki.json';
-        var url_data = 'http://localhost/InteractiveMaps/js/mer2008_data_exitpoll.json';
+        //var url_regions = 'http://localhost/InteractiveMaps/js/districts_wiki.json';
+        //var url_data = 'http://localhost/InteractiveMaps/js/mer_2008_exitpoll_full.json';
         //var url_data_units = 'http://localhost/InteractiveMaps/js/mer2008_data_byunits.json';
-        //var url_regions = 'http://survey-archive.com/InteractiveMaps/js/districts_wiki.json';
-        //var url_data = 'http://survey-archive.com/InteractiveMaps/js/mer2008_data_exitpoll.json';
+        var url_regions = 'http://survey-archive.com/InteractiveMaps/js/districts_wiki.json';
+        var url_data = 'http://survey-archive.com/InteractiveMaps/js/mer_2008_exitpoll_full.json';
         //var url_data_units = 'http://survey-archive.com/InteractiveMaps/js/mer2008_data_byunits.json';
 
         var infoWindow;
         var map;
         var districts = [];
-        var districts_by_candidate = {"ПОПОВ": {title:"За Попова",data:[],votes:[],votes_by_district:[]},
-            "ПОРОШЕНКО": {title:"За Порошенко",data:[],votes:[],votes_by_district:[]}
+        var districts_by_candidate = {
+            "ЧЕРНОВЕЦКИЙ": {title:"За Черновецкого",data:[],votes:[],votes_by_district:[]},
+            "ТУРЧИНОВ": {title:"За Турчинова",data:[],votes:[],votes_by_district:[]},
+            "КЛИЧКО": {title:"За Кличко",data:[],votes:[],votes_by_district:[]},
+            "ПИЛИПИШИН": {title:"За Пилипишина",data:[],votes:[],votes_by_district:[]},
+            "КАТЕРИНЧУК": {title:"За Катеринчука",data:[],votes:[],votes_by_district:[]},
+            "ГОРБАЛЬ": {title:"За Горбаля",data:[],votes:[],votes_by_district:[]},
+            "ОМЕЛЬЧЕНКО": {title:"За Омельченко",data:[],votes:[],votes_by_district:[]},
+            "ТЯГНИБОК": {title:"За Тягнибока",data:[],votes:[],votes_by_district:[]}
         };
 
         //var url = 'http://survey-archive.com/InteractiveMaps/js/polygons_backup219140.json';
@@ -88,8 +101,15 @@
             infoWindow = new google.maps.InfoWindow();
         }
         function loadData(){
-            var ratings = {"ПОПОВ": [0,0],
-                "ПОРОШЕНКО": [0,0]
+            var ratings = {
+                "ЧЕРНОВЕЦКИЙ": [0,0],
+                "ТУРЧИНОВ": [0,0],
+                "КЛИЧКО": [0,0],
+                "ПИЛИПИШИН": [0,0],
+                "КАТЕРИНЧУК": [0,0],
+                "ГОРБАЛЬ": [0,0],
+                "ОМЕЛЬЧЕНКО": [0,0],
+                "ТЯГНИБОК": [0,0]
             };
               for(var i = 0;i<districts.length;i++){
                 if(districts[i].votes_total!=undefined){
@@ -127,7 +147,7 @@
                             v.data.push(voteUnit);
                         });
                     //alert(JSON.stringify(districts_by_candidate));
-                    chooseMap("ПОПОВ");
+                    chooseMap("ЧЕРНОВЕЦКИЙ");
                 }
             }
         }
@@ -153,7 +173,8 @@
                         var lat = v["lat"]
                         var lng = v["lng"]
                         var myLatLng = new google.maps.LatLng(lat,lng);
-                        districts_by_candidate[elem].votes.push({coord:myLatLng,address:address})
+                        var name = val["name"];
+                        districts_by_candidate[name].votes.push({coord:myLatLng,address:address})
                         for(var i = 0;i < districts.length;i++){
                             var district = districts[i];
                             //alert(district.getPat);
@@ -161,10 +182,10 @@
                             {
                                 //alert("here!");
                                 var district_name = district.title;
-                                var votes = districts_by_candidate[elem].votes_by_district[district_name]
+                                var votes = districts_by_candidate[name].votes_by_district[district_name]
                                 if(votes==undefined) votes = 0;
                                 votes++;
-                                districts_by_candidate[elem].votes_by_district[district_name]=votes;
+                                districts_by_candidate[name].votes_by_district[district_name]=votes;
                                 //alert(votes_total);
 
                                 var votes_total = district.votes_total;
@@ -180,7 +201,7 @@
                             map: map,
                             icon: image,
                             shape:shape,
-                            title: districts_by_candidate[elem].title+": 1 голос \n"+address
+                            title: districts_by_candidate[name].title+": 1 голос \n"+address
                         });
                     });
                     /*for(var i = 0;i < districts.length;i++){
@@ -256,6 +277,12 @@
          $.each(districts_by_candidate,function(elem,val){
              for(var i = 0; i < val.data.length;i++)
              {
+                 var element = document.getElementById(elem);
+                 if(elem == candidate) {
+                     element.className = "visited";
+                 }else
+                     element.className = "notvisited";
+
                  if(elem == candidate) {
                      //alert("MATCH!");
                      //alert(val.data[i].rate_text);
@@ -276,8 +303,14 @@
 </head>
 <body onload="initialize()">
 <div id="panel">
-    <button onclick="chooseMap('ПОПОВ')">Попов</button>
-    <button onclick="chooseMap('ПОРОШЕНКО')">Порошенко</button>
+    <button id="ЧЕРНОВЕЦКИЙ" onclick="chooseMap('ЧЕРНОВЕЦКИЙ')" class="visited">ЧЕРНОВЕЦКИЙ</button>
+    <button id="ТУРЧИНОВ" onclick="chooseMap('ТУРЧИНОВ')" class="notvisited">ТУРЧИНОВ</button>
+    <button id="КЛИЧКО" onclick="chooseMap('КЛИЧКО')" class="notvisited">КЛИЧКО</button>
+    <button id="ПИЛИПИШИН" onclick="chooseMap('ПИЛИПИШИН')" class="notvisited">ПИЛИПИШИН</button>
+    <button id="КАТЕРИНЧУК" onclick="chooseMap('КАТЕРИНЧУК')" class="notvisited">КАТЕРИНЧУК</button>
+    <button id="ГОРБАЛЬ" onclick="chooseMap('ГОРБАЛЬ')" class="notvisited">ГОРБАЛЬ</button>
+    <button id="ОМЕЛЬЧЕНКО" onclick="chooseMap('ОМЕЛЬЧЕНКО')" class="notvisited">ОМЕЛЬЧЕНКО</button>
+    <button id="ТЯГНИБОК" onclick="chooseMap('ТЯГНИБОК')" class="notvisited">ТЯГНИБОК</button>
 </div>
 <div id="map_canvas" style="width:100%; height:100%"></div>
 </body>
