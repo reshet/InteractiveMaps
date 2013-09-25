@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'/>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <style type="text/css">
+        html { height: 100% }
+        body { height: 100%; margin: 0; padding: 0; background-color: #91e842 }
+        #map_canvas { height: 100% }
+        #panel {
+            position: absolute;
+            top: 5px;
+            left: 20%;
+            margin-left: -180px;
+            z-index: 5;
+            background-color: #fff;
+            padding: 5px;
+            border: 1px solid #999;
+            opacity: 0.8;
+        }
+        #panel_stops {
+            position: absolute;
+            top: 150px;
+            left: 20%;
+            margin-left: -180px;
+            z-index: 5;
+            background-color: #fff;
+            padding: 5px;
+            border: 1px solid #999;
+            opacity: 0.8;
+        }
+        #panel_input {
+            position: absolute;
+            top: 200px;
+            left: 50%;
+            margin-left: -180px;
+            z-index: 5;
+            background-color: #fff;
+            padding: 5px;
+            border: 1px solid #999;
+            opacity: 0.8;
+        }
+        #panel_session {
+            position: absolute;
+            top: 5px;
+            left: 80%;
+            margin-right: -120px;
+            z-index: 5;
+            background-color: #fff;
+            padding: 5px;
+            border: 1px solid #999;
+            opacity: 0.8;
+        }
+        #panel_search {
+            position: absolute;
+            top: 5px;
+            left: 50%;
+            margin-right: -100px;
+            z-index: 5;
+            background-color: #fff;
+            padding: 5px;
+            border: 1px solid #999;
+            opacity: 0.8;
+        }
+        .contextmenu{
+            visibility:hidden;
+            background:#ffffff;
+            border:1px solid #8888FF;
+            z-index: 10;
+            position: relative;
+            width: 180px;
+        }
+        .contextmenu div{
+            padding-left: 5px
+        }
+    </style>
+
+   <!-- <script type="text/javascript"
+            src="http://maps.googleapis.com/maps/api/js?key=AIzaSyAB1alQoDJvJ9L5iIojuebZUhkBZeBN9OI&language=uk&sensor=false">
+    </script>-->
+    <script type="text/javascript"
+            src="js/vendor/jquery-1.9.1.min.js">
+    </script>
+    <script type="text/javascript">
+        var url_get_anket = 'http://localhost/MSS/InfoTransportGetRouteAnket.php';
+        //var url_data = 'http://survey-archive.com/InteractiveMaps/js/addresses_geo3.json';
+        //var url_fixer_get = "http://localhost/MSS/FixTransportListApproxGeocodedRandom.php";
+        //var url_fixer_get = "http://survey-archive.com/MSS/FixTransportListApproxGeocodedRandom.php";
+        //var url_fixer_save = "http://localhost/MSS/FixGeocodeUpdateTransport.php";
+        //var url_fixer_save = "http://survey-archive.com/MSS/FixGeocodeUpdateTransport.php";
+        //var cache_url = 'http://localhost/InteractiveMaps/php/geocache.php';
+        //var cache_url = 'http://survey-archive.com/InteractiveMaps/php/geocache.php';
+
+
+
+        var infoWindow;
+
+        var task_id;
+        var task_desc;
+        var int_code;
+        var login;
+        var route;
+        var route_type;
+        var total_addresses = 0;
+        var changed_addresses = 0;
+        var skipped_addresses = 0;
+        var current_anket_meta;
+        var current_stops;
+
+        var loadAnket = function(transp_type,transp_number){
+            current_anket_meta = null
+            current_stops = null
+            $.getJSON(url_get_anket+"?type="+transp_type+"&route="+transp_number, function(data) {
+                 //console.log(data);
+                 //var anket = JSON.parse(data);
+                 task_id = data["MSS_ID"];
+                 current_anket_meta = data["PASSPORT"]
+
+                 //console.log(current_anket_meta);
+                 for(var ss in current_anket_meta){
+                     var some = current_anket_meta[ss];
+                     var sss = some["question"];
+                     //console.log(sss);
+                     if(sss.indexOf("_") !=-1 && (sss.indexOf("A")!=-1 || sss.indexOf("B")!=-1 || sss.indexOf("C")!=-1 || sss.indexOf("D")!=-1)){
+                         if(sss.indexOf(transp_number)!=-1){
+
+                             //console.log(sss);
+                             var alts = some["alternatives"]
+                             current_stops = alts;
+                             for(var alt in current_stops){
+                                 //console.log(alts);
+                                 //console.log(current_stops[alt]["id"]+" "+current_stops[alt]["text"])
+                             }
+                         }
+
+                     }
+
+                 }
+                 if(current_anket_meta === null || current_stops === null) {
+                     alert("Маршрут не найден!");
+                     $("#panel_stops").empty();
+                 }
+                 else startAnket();
+                 //alert(task_id);
+            });
+        }
+        function showStops(){
+            $("#panel_stops").empty();
+            for(var ss in current_stops){
+                $("#panel_stops").append("<b>"+current_stops[ss]["id"]+". "+current_stops[ss]["text"]+"</b></br>");
+            }
+
+        }
+        function startAnket(){
+            showStops();
+            $("#code_input").focus();
+        }
+        function initialize() {
+
+            $("#login").focus();
+            $('#login').on('keyup', function(e) {
+                if (e.which == 13) {
+                    e.preventDefault();
+                    login =  $("#login").val();
+                    $("#int_code").focus();
+                }
+            });
+            $('#int_code').on('keyup', function(e) {
+                if (e.which == 13) {
+                    e.preventDefault();
+                    int_code =  $("#int_code").val();
+                    $("#route_type").focus();
+                }
+            });
+            $('#route_type').on('keyup', function(e) {
+                if (e.which == 13) {
+                    e.preventDefault();
+                    route_type =  $("#route_type").val();
+                    $("#route").focus();
+                }
+            });
+            $('#route_type').on('change', function(e) {
+                    route_type =  $("#route_type").val();
+                    $("#route").focus();
+
+            });
+            $('#route').on('keyup', function(e) {
+                if (e.which == 13) {
+                    e.preventDefault();
+                    route =  $("#route").val();
+                    loadAnket(route_type,route);
+                    //$("#route").focus();
+                }
+            });
+
+            $("#stat_total").text(''+total_addresses);
+
+
+
+        }
+
+        function cancel_change(){
+            $('.contextmenu').remove();
+        }
+        function searchAddress(addr){
+            console.log("Search "+addr);
+            geocoder.geocode({'address': "киев"+addr}, function (results, status) {
+                console.log("geocoding request returns");
+                if (status == google.maps.GeocoderStatus.OK) {
+                    //alert(JSON.stringify(results[0].geometry));
+                    for(i=0;i <searchMarkers.length;i++){
+                        searchMarkers[i].setMap(null);
+                    }
+                    searchMarkers = [];
+
+                    for(i=0;i <results.length || i < 6;i++){
+
+                        var latitude = results[i].geometry.location.lat();
+                        var longitude = results[i].geometry.location.lng();
+                        var formatted = results[i].formatted_address;
+                        var myLatLng = new google.maps.LatLng(latitude,longitude);
+                        console.log(myLatLng);
+                        var searchMarker = new google.maps.Marker({
+                            position: myLatLng,
+                            map: map,
+                            animation: google.maps.Animation.DROP,
+                            title: formatted
+                        });
+                        google.maps.event.addListener(searchMarker, "rightclick",function(event){showContextMenu(event.latLng);});
+                        searchMarkers.push(searchMarker);
+                        //console.log(searchMarker);
+                    }
+
+
+
+                } else {
+                    alert('Не удалось найти адрес, причина: ' + status);
+                }
+            });
+        }
+
+        function showContextMenu(currentLatLng) {
+            var projection;
+            var contextmenuDir;
+            projection = map.getProjection() ;
+            $('.contextmenu').remove();
+            contextmenuDir = document.createElement("div");
+            contextmenuDir.className  = 'contextmenu';
+            contextmenuDir.innerHTML = '<a id="menu_change" onclick="change_marker('+currentLatLng.lat()+','+currentLatLng.lng()+')"><div class="context">Изменить положение<\/div><\/a>'
+                    + '<a id="menu_cancel" onclick="cancel_change()"><div class="context">Отмена<\/div><\/a>';
+
+            $(map.getDiv()).append(contextmenuDir);
+
+            setMenuXY(currentLatLng);
+
+            contextmenuDir.style.visibility = "visible";
+        }
+
+
+        //var geocoder = new google.maps.Geocoder();
+
+
+        function codeLatLng(latlng,callback) {
+
+            geocoder.geocode({'location': latlng}, function (results, status) {
+                console.log("geocoding request returns");
+                if (status == google.maps.GeocoderStatus.OK) {
+                    //alert(JSON.stringify(results[0].geometry));
+                    var latitude = results[0].geometry.location.lat();
+                    var longitude = results[0].geometry.location.lng();
+                    var formatted = results[0].formatted_address;
+                    var loc_type = results[0].geometry.location_type;
+                    //console.log(formatted);
+                    $.get(cache_url,
+                            {action:"pt",address:address,long:longitude,lat:latitude,g_address:formatted,type:loc_type},
+                            function(response){
+                                callback(response);
+                            }
+                    );
+                    //    "?action=pt&address="+address+"&long="+longitude+"&lat="+latitude);
+
+                } else {
+                    alert('Geocode was not successful for the following reason: ' + status);
+                }
+            });
+
+        }
+        var saveGeocodeManually = function(){
+
+            var login = $("#login").val();
+            console.log("login: "+login);
+            if(login === ''){
+              alert("Введите логин! Ведется учет вашей работы");
+            }else{
+                var res = true;
+                if(!hasChanged){
+                  res =confirm("Вы не меняли положение маркера. Уверены, что положение правильное?");
+                }
+                if(res){
+                    console.log("Saving");
+                    if(hasChanged){
+                        codeLatLng( new google.maps.LatLng(marker_lat,marker_lng),function(loc){
+                            //console.log(loc);
+                            var location = $.parseJSON(loc);
+                            var latitude = location["lb"];
+                            var longitude = location["mb"];
+                            var g_address = location["address"];
+                            console.log(g_address);
+                            var loc_type = location["loc_type"];
+
+                            actualServerUpdate(g_address,latitude,longitude,login,"MANUAL");
+                        });
+                    }else{
+
+                        actualServerUpdate(g_addr,marker_lat,marker_lng,login,"MANUAL");
+                    }
+
+                }
+
+            }
+
+        }
+        function actualServerUpdate(address,lat,lng,login,status){
+            $.ajax({
+                        type:"POST",
+                        url:url_fixer_save,
+                        data:{
+                            base_var_code:var_code,lat:lat,lng:lng,task_id:task_id,int_id:int_id,
+                            formatted:address,loc_type:status+"_"+login
+                        },
+                        success:function(data){
+                            console.log(data);
+                            commitSave(status);
+                        },
+                        error:function(data){
+                             alert("Ошибка, сообщите администратору: "+JSON.stringify(data));
+                             skipAddress();
+                        }
+                    }
+            );
+        }
+
+        function commitSave(status){
+            geoMarker.setMap(null);
+            loadNext();
+            if(status == "MANUAL"){
+                changed_addresses++;
+                $("#stat_changed").text(''+changed_addresses);
+            }else{
+                skipped_addresses++;
+                $("#stat_skipped").text(''+skipped_addresses);
+            }
+        }
+
+        var skipAddress = function(){
+
+            var login = $("#login").val();
+            console.log("login: "+login);
+            if(login === ''){
+                alert("Введите логин! Ведется учет вашей работы");
+            }else{
+                var res =confirm("Вы уверены? Адрес будет обработан менеджером!");
+                if(res){
+                    console.log("Postponing");
+                    actualServerUpdate(g_addr,marker_lat_init,marker_lng_init,login,"POSTPONED");
+                }
+
+            }
+        }
+    </script>
+</head>
+<body onload="initialize()">
+<div id="panel">
+    <table>
+        <tr>
+            <td><b>Логін оператора:</b>
+            </td>
+            <td><input id="login"/></td>
+        </tr>
+        <tr>
+            <td><b>Код інтерв’ювера:</b>
+            </td>
+            <td><input id="int_code"/></td>
+        </tr>
+        <tr>
+            <td><b>Тип маршруту:</b>
+            </td>
+            <td>
+                <select id="route_type" style="width : 200">
+                    <option value="0" selected="true">Выбрать</option>
+                    <option value="1">Маршрутне таксі</option>
+                    <option value="2">Автобус</option>
+                    <option value="3">Тролейбус</option>
+                    <option value="4">Трамвай</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td><b>Маршрут: </b>
+            </td>
+            <td><input id="route"/></td>
+        </tr>
+    </table>
+
+</div>
+<div id="panel_stops">
+
+</div>
+<div id="panel_input">
+    <table>
+        <tr>
+            <td><b>Вопрос:</b><span id="quest_text"/>
+            </td>
+        </tr>
+        <tr>
+            <td><b>Альтернативы:</b><span id="alts"/>
+            </td>
+        </tr>
+        <tr>
+            <td><b>Ответ:</b><input id="code_input"/>
+            </td>
+        </tr>
+
+    </table>
+</div>
+<div id="panel_session">
+    <table>
+        <tr>
+            <td><b>Изменено:</b><span id="stat_changed"/>
+            </td>
+        </tr>
+        <tr>
+            <td><b>Пропущено:</b><span id="stat_skipped"/>
+            </td>
+        </tr>
+        <tr>
+            <td><b>Всего:</b><span id="stat_total"/>
+            </td>
+        </tr>
+
+    </table>
+</div>
+
+<div id="map_canvas" style="width:100%; height:100%"></div>
+</body>
+</html>
