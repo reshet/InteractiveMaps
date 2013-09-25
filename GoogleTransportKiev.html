@@ -15,10 +15,10 @@
             src="js/vendor/jquery-1.9.1.min.js">
     </script>
     <script type="text/javascript">
-        //var url_data = 'http://localhost/InteractiveMaps/js/addresses_geo3.json';
-        var url_data = 'http://survey-archive.com/InteractiveMaps/js/addresses_geo3.json';
-        //var url_fixer = "http://localhost/MSS/FixGeocodeSaveTransport.php";
-        var url_fixer = "http://survey-archive.com/MSS/FixGeocodeSaveTransport.php";
+        var url_data = 'http://localhost/InteractiveMaps/js/addresses_geo3.json';
+        //var url_data = 'http://survey-archive.com/InteractiveMaps/js/addresses_geo3.json';
+        var url_fixer = "http://localhost/MSS/FixGeocodeSaveTransport.php";
+        //var url_fixer = "http://survey-archive.com/MSS/FixGeocodeSaveTransport.php";
         //var cache_url = 'http://localhost/InteractiveMaps/php/geocache.php';
         function initialize() {
             var mapOptions = {
@@ -61,15 +61,15 @@
                  total_addresses++;
                  if(loc_type=="NO" ||loc_type!="APPROXIMATE") nice_addresses++
                 // var myLatLng = new google.maps.LatLng(lat,lng);
-                /* var beachMarker = new google.maps.Marker({
+                 var beachMarker = new google.maps.Marker({
                      position: myLatLng,
                      map: map,
                      icon: image,
                      shape:shape,
                      title: var_code+": "+address+"; anket "+task_id+"; int "+int_id+"; loc "+loc_type
-                 });*/
+                 });
                  //if(elem < 2){
-                     $.ajax({
+                    /* $.ajax({
                                  type:"POST",
                                  url:url_fixer,
                                  data:{
@@ -80,7 +80,7 @@
                                      console.log(total_addresses+" "+ data);
                                  }
                              }
-                     );
+                     );*/
                  //}
 
              });

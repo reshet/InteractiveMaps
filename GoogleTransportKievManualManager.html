@@ -62,12 +62,13 @@
     <script type="text/javascript">
         //var url_data = 'http://localhost/InteractiveMaps/js/addresses_geo3.json';
         //var url_data = 'http://survey-archive.com/InteractiveMaps/js/addresses_geo3.json';
-        //var url_fixer_get = "http://localhost/MSS/FixTransportListApproxGeocodedRandom.php";
-        var url_fixer_get = "http://survey-archive.com/MSS/FixTransportListApproxGeocodedRandom.php";
+        //var url_fixer_get = "http://localhost/MSS/FixTransportListPostponedGeocoded.php";
+        var url_fixer_get = "http://survey-archive.com/MSS/FixTransportListPostponedGeocoded.php";
         //var url_fixer_save = "http://localhost/MSS/FixGeocodeUpdateTransport.php";
         var url_fixer_save = "http://survey-archive.com/MSS/FixGeocodeUpdateTransport.php";
-        //var cache_url = 'http://localhost/InteractiveMaps/php/geocache.php';
+        //var url_fixer = "http://survey-archive.com/MSS/FixGeocodeSaveTransport.php";
         var cache_url = 'http://survey-archive.com/InteractiveMaps/php/geocache.php';
+        //var cache_url = 'http://localhost/InteractiveMaps/php/geocache.php';
 
         var map;
         var image;
@@ -100,6 +101,11 @@
             $.getJSON(url_fixer_get, function(data) {
                 //alert(data);
                 console.log("loading next address...");
+                console.log(data);
+                if(data[0]["error"] === "No results") {
+                    alert("Больше нет отложенных адресов.");
+                    return;
+                }
 
                 //alert(val)
                 var val = data[0];
@@ -110,7 +116,6 @@
                 var_code = val["var_code"]
                 task_id = val["task_id"]
                 task_desc = val["task_desc"]
-
                 int_id = val["int_id"]
                 loc_type = val["geo_type"]
                 route = val["route"];
