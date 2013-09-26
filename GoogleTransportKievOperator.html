@@ -20,7 +20,7 @@
         }
         #panel_stops {
             position: absolute;
-            top: 150px;
+            top: 170px;
             left: 20%;
             margin-left: -180px;
             z-index: 5;
@@ -31,7 +31,7 @@
         }
         #panel_input {
             position: absolute;
-            top: 200px;
+            top: 50px;
             left: 50%;
             margin-left: -180px;
             z-index: 5;
@@ -98,6 +98,7 @@
         var task_id;
         var task_desc;
         var int_code;
+        var date;
         var login;
         var route;
         var route_type;
@@ -106,6 +107,8 @@
         var skipped_addresses = 0;
         var current_anket_meta;
         var current_stops;
+        var stops_var_code_1;
+        var stops_var_code_2;
 
         var loadAnket = function(transp_type,transp_number){
             current_anket_meta = null
@@ -116,7 +119,7 @@
                  task_id = data["MSS_ID"];
                  current_anket_meta = data["PASSPORT"]
 
-                 //console.log(current_anket_meta);
+                 console.log(current_anket_meta);
                  for(var ss in current_anket_meta){
                      var some = current_anket_meta[ss];
                      var sss = some["question"];
@@ -131,6 +134,17 @@
                                  //console.log(alts);
                                  //console.log(current_stops[alt]["id"]+" "+current_stops[alt]["text"])
                              }
+                             stops_var_code_1 = ss;
+                             console.log(ss);
+                             //break;
+                         }
+
+                     }
+                     if(sss.indexOf("_") !=-1 && (sss.indexOf("K")!=-1 || sss.indexOf("L")!=-1 || sss.indexOf("M")!=-1 || sss.indexOf("N")!=-1)){
+                         if(sss.indexOf(transp_number)!=-1){
+                             stops_var_code_2 = ss;
+                             console.log(ss);
+                             //break;
                          }
 
                      }
@@ -151,10 +165,150 @@
             }
 
         }
+
+        var current_question = "START_TIME_1"
+        var getTextFromMeta = function(code){
+            return current_anket_meta[code]["question"];
+        };
+        var getAltsFromMeta = function(code){
+            return current_anket_meta[code]["alternatives"];
+        };
+        var anket_logic = [
+            {
+                code:"START_TIME_1",
+                type:"datetime",
+                text:getTextFromMeta(this.code),
+                shorttext: "Час початку"
+            },
+            {
+                code:stops_var_code_1,
+                shorttext: "Зайшли",
+                type:"defined",
+                alternatives:getAltsFromMeta(this.code)
+            },
+            {
+                code:"Q2",
+                shorttext: "Чекали",
+                type:"integer"
+            },
+            {
+                code:"Q5",
+                shorttext: "Пересадки до",
+                type:"text",
+                multi:true
+            },
+            {
+                code:stops_var_code_2,
+                shorttext: "Вийдите",
+                type:"defined",
+                alternatives:getAltsFromMeta(this.code)
+            },
+            {
+                code:"Q9",
+                shorttext: "Пересадки після",
+                type:"text",
+                multi:true
+            },
+            {
+                code:"Q10",
+                type:"text",
+                shorttext: "Адреса початку"
+            },
+            {
+                code:"Q11",
+                type:"text",
+                shorttext: "Адреса кінця"
+            },
+            {
+                code:"Q12",
+                shorttext: "Задоволеність поїздкою",
+                type:"defined",
+                alternatives:getAltsFromMeta(this.code)
+            },
+            {
+                code:"Q13_1",
+                shorttext: "Частота руху",
+                type:"defined",
+                alternatives:getAltsFromMeta(this.code)
+            },
+            {
+                code:"Q13_2",
+                shorttext: "Наповненість салону", type:"defined",
+                alternatives:getAltsFromMeta(this.code)
+
+            },
+            {
+                code:"Q13_3",
+                shorttext: "Час поїздки",
+                type:"defined",
+                alternatives:getAltsFromMeta(this.code)
+            },
+            {
+                code:"Q13_4",
+                shorttext: "Чистота і зручність",
+                type:"defined",
+                alternatives:getAltsFromMeta(this.code)
+            },
+            {
+                code:"Q13_5",
+                shorttext: "Надійність маршруту",
+                type:"defined",
+                alternatives:getAltsFromMeta(this.code)
+            },
+            {
+                code:"Q13_6",
+                shorttext: "Температура повітря",
+                type:"defined",
+                alternatives:getAltsFromMeta(this.code)
+            },
+            {
+                code:"Q14",
+                shorttext: "Перебування в Києві",
+                type:"defined",
+                alternatives:getAltsFromMeta(this.code)
+            },
+            {
+                code:"Q16",
+                shorttext: "Мова",
+                type:"defined",
+                alternatives:getAltsFromMeta(this.code)
+            }
+        ]
+        var current_interview = []
         function startAnket(){
             showStops();
             $("#code_input").focus();
+
         }
+        function getLogicElement(code){
+            for(var s in anket_logic){
+                if(anket_logic[s]["code"]===code){
+                    return  anket_logic[s];
+                }
+            }
+        }
+        function anketLoop(code){
+            $("#quest_text").text(getLogicElement(code)["shorttext"]);
+            //$("#quest_text").text(anket_logic[code]["shorttext"]);
+            $('#code_input').unbind('keyup');
+
+            $('#code_input').on('keyup', function(e) {
+                var temp =  $("#code_input").val();
+                if (temp !== "")
+                    if (e.which == 13) {
+                        e.preventDefault();
+
+                        var val = $("#code_input").val();
+                        current_interview.push({code:code,value:val})
+                    }
+            });
+            if(code === anket_logic[anket_logic.length-1].code){
+               finishInterview();
+            }
+        };
+        function finishInterview(){
+           console.log(current_interview);
+        };
         function initialize() {
 
             $("#login").focus();
@@ -162,6 +316,13 @@
                 if (e.which == 13) {
                     e.preventDefault();
                     login =  $("#login").val();
+                    $("#date").focus();
+                }
+            });
+            $('#date').on('keyup', function(e) {
+                if (e.which == 13) {
+                    e.preventDefault();
+                    date =  $("#date").val();
                     $("#int_code").focus();
                 }
             });
@@ -180,11 +341,14 @@
                 }
             });
             $('#route_type').on('change', function(e) {
+                e.preventDefault();
                     route_type =  $("#route_type").val();
                     $("#route").focus();
 
             });
             $('#route').on('keyup', function(e) {
+                var temp =  $("#route").val();
+                if (temp !== "")
                 if (e.which == 13) {
                     e.preventDefault();
                     route =  $("#route").val();
@@ -376,6 +540,11 @@
             <td><b>Логін оператора:</b>
             </td>
             <td><input id="login"/></td>
+        </tr>
+        <tr>
+            <td><b>Дата:</b>
+            </td>
+            <td><input id="date"/></td>
         </tr>
         <tr>
             <td><b>Код інтерв’ювера:</b>
