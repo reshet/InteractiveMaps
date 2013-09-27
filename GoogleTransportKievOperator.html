@@ -350,7 +350,7 @@
 
             if(isNaN(parseInt(key)))return false;
             //console.log("there");
-            console.log(constr);
+            //console.log(constr);
             for(var s in constr){
                  if(constr[s].indexOf(key)!=-1) return true;
             }
@@ -395,6 +395,7 @@
             }
 
             var registerOneTranspChange = function(seq){
+                setTranspChangeAlts();
                 addTransportChangeInputForm(seq);
                 var constructAnsAll = function(){
                     var total_ans = "";
@@ -416,14 +417,17 @@
                     }
                     else if(r_type !== "-1")$("#transp_n_"+seq).focus();
                     if(r_type === "1"||r_type === "2"||r_type === "3"||r_type === "4"){
-                        var more = confirm('Ще одна пересадка?');
+                        console.log("cycling");
+                        ++seq;
+                        registerOneTranspChange(seq);
+                        /*var more = confirm('Ще одна пересадка?');
                         if(more){
                             ++seq;
                             registerOneTranspChange(seq);
                         }else{
 
                             nextStep(code,constructAnsAll());
-                        }
+                        }*/
                     }
                 };
                 $("#route_type_"+seq).focus();
@@ -435,7 +439,7 @@
                        selectTranspBeh();
                     }
                 });
-                $('#route_type_'+seq).on('change', selectTranspBeh);
+                //$('#route_type_'+seq).on('change', selectTranspBeh);
 
                 $("#transp_n_"+seq).on('keyup', function(e) {
 
@@ -447,18 +451,20 @@
                         return;
                     }
                     if (temp !== ""){
-                        if (e.which == 13) {
+                        if (e.which == 13 || e.which == 107|| e.which == 187) {
                             e.preventDefault();
 
                             //$("#house_input").focus();
-                            var more = confirm('Ще одна пересадка?');
+                            ++seq;
+                            registerOneTranspChange(seq);
+                            /*var more = confirm('Ще одна пересадка?');
                             if(more){
                                 ++seq;
                                 registerOneTranspChange(seq);
                             }else{
 
                                 nextStep(code,constructAnsAll());
-                            }
+                            }*/
 
                         }
                     }
@@ -547,16 +553,21 @@
                             var val =  $('#street_input').val()+" "+ $("#house_input").val();
                             nextStep(code,val);
                         }
+                        if (e.which == 107 || e.which == 187) {
+                            e.preventDefault();
+                            var val =  $('#street_input').val();
+                            nextStep(code,val);
+                        }
                     }
                 });
             }else
             if(curr_type === "text" && curr_elem["multi"]===true){
                 var seq = 1;
-                $('#panel_input').html('');
+                $('#panel_input').html('<b>Питання:</b><span id="quest_text"></span><br/>');
                 registerOneTranspChange(seq);
 
             }
-                $("#quest_text").text(curr_elem["shorttext"]);
+            $("#quest_text").text(curr_elem["shorttext"]);
 
 
 
@@ -607,8 +618,20 @@
 
 
         };
+        function finilizeInterview(){
+           var time = current_interview["START_TIME_1"];
+           var month = $("#date_month").val();
+           var day = $("#date_day").val();
+           if(month <10) month ='0'+month;
+           if(day <10) day ='0'+day;
+
+            var datetime = "2013-"+month+"-"+day+" "+time;
+           current_interview["START_TIME_1"] = datetime;
+
+        }
         function finishInterview(){
-           console.log(JSON.stringify(current_interview));
+            finilizeInterview();
+            console.log(JSON.stringify(current_interview));
             total_ints_done++;
             $("#stat_total").text(''+total_ints_done);
 
@@ -714,7 +737,11 @@
             });
 
             $("#stat_total").text(''+total_ints_done);
-
+            $(window).on('keydown',function(e){
+                if (e.which == 33) {
+                    backInLoop();
+                }
+            });
 
 
         }
@@ -949,8 +976,22 @@
                     '</tr>'+
                     '</table>');
         };
+        var setTranspChangeAlts = function(){
+            $('#panel_stops').html(
+                            '<b>0. Нет</b></br>'+
+                            '<b>1. Автомобіль</b></br>'+
+                            '<b>2 .Таксі</b></br>'+
+                            '<b>3. Метро</b></br>'+
+                            '<b>4. Міська електричка</b></br>'+
+                            '<b>5. Маршрутне таксі</b></br>'+
+                            '<b>6. Автобус</b></br>'+
+                            '<b>7. Трамвай</b></br>'+
+                            '<b>8. Тролейбус</b></br>'
+
+            );
+        }
         var addTransportChangeInputForm = function(seq){
-            $('#panel_input').append( '<table>'+
+          /*  $('#panel_input').append( '<table>'+
                     '<tr>'+
                     '<td><b>Пересадка:</b>'+
                     '</td>'+
@@ -973,7 +1014,22 @@
                     '</td>'+
                     '<td><input id="transp_n_'+seq+'"/></td>'+
                     '</tr>'+
+                    '</table>');*/
+            $('#panel_input').append( '<table>'+
+                    '<tr>'+
+                    '<td><b>Пересадка:</b>'+
+                    '</td>'+
+                    '<td>'+
+                    '<input id="route_type_'+seq+'"/>'+
+                    '</td>'+
+                    '</tr>'+
+                    '<tr>'+
+                    '<td><b>Номер :</b>'+
+                    '</td>'+
+                    '<td><input id="transp_n_'+seq+'"/></td>'+
+                    '</tr>'+
                     '</table>');
+
         };
     </script>
 </head>
