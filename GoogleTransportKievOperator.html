@@ -98,8 +98,12 @@
         var date;
         var login;
         var route;
+        var prev_route = null;
+        var prev_route_type = null;
+
         var route_type;
         var total_ints_done = 0;
+
 
         var current_anket_meta;
         var inpoll_streets;
@@ -238,8 +242,16 @@
             });
         }
         var loadAnket = function(transp_type,transp_number){
+
+            if(transp_type === prev_route_type && transp_number === prev_route){
+                initAnketLogic();
+                startAnket();
+                return;
+            }
+
             current_anket_meta = null
             current_stops = null
+
             $.getJSON(url_get_anket+"?type="+transp_type+"&route="+transp_number, function(data) {
                  //console.log(data);
                  //var anket = JSON.parse(data);
@@ -692,7 +704,11 @@
                 if (e.which == 13) {
                     e.preventDefault();
                     route =  $("#route").val();
+
+
                     loadAnket(route_type,route);
+                    prev_route  = route;
+                    prev_route_type  = route_type;
                     //$("#route").focus();
                 }
             });
