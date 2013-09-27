@@ -84,7 +84,9 @@
     </script>
     <script type="text/javascript">
         var url_get_anket = 'http://localhost/MSS/InfoTransportGetRouteAnket.php';
+        var url_post_interview = 'http://localhost/MSS/MainGate.php';
         var url_inpoll_streets = 'http://localhost/InteractiveMaps/js/inpollstreets.json';
+
         //var url_get_anket = 'http://survey-archive.com/MSS/InfoTransportGetRouteAnket.php';
         //var url_inpoll_streets = 'http://survey-archive.com/InteractiveMaps/js/inpollstreets.json';
 
@@ -253,7 +255,7 @@
             current_stops = null
 
             $.getJSON(url_get_anket+"?type="+transp_type+"&route="+transp_number, function(data) {
-                 //console.log(data);
+                 console.log(data);
                  //var anket = JSON.parse(data);
                  task_id = data["MSS_ID"];
                  current_anket_meta = data["PASSPORT"]
@@ -367,9 +369,16 @@
             if(curr_elem_index>0){
                 curr_elem_index--;
                 anketLoop(anket_logic[curr_elem_index]["code"]);
+                if(current_interview[anket_logic[curr_elem_index]["code"]]!=='undefined'){
+                    $("#code_input").val(current_interview[anket_logic[curr_elem_index]["code"]]);
+                }
             }
 
         };
+        var addzero = function(el){
+            if(el <10) el ='0'+el;
+            return el;
+        }
         function anketLoop(code){
 
             curr_elem_index = getLogicElementIndex(code);
@@ -398,12 +407,32 @@
                 setTranspChangeAlts();
                 addTransportChangeInputForm(seq);
                 var constructAnsAll = function(){
-                    var total_ans = "";
-                    for(var s = 1; s <= seq;s++){
-                        var val =  $('#route_type_'+s).val()+" "+ $("#transp_n_"+s).val();
-                        total_ans = total_ans+" "+val;
+                    if(seq === 1){
+                        if(code === "Q5"){
+                            current_interview["Q3"] = "1";
+                        } else if(code === "Q9"){
+                            current_interview["Q7"] = "1";
+                        }
+                    }else{
+                        if(code === "Q5"){
+                            current_interview["Q3"] = "2";
+                            current_interview["Q4"] = seq-1;
+                        } else if(code === "Q9"){
+                            current_interview["Q7"] = "2";
+                            current_interview["Q8"] = seq-1;
+                        }
+                        for(var s = 1; s <= seq;s++){
+                            //var val =  $('#route_type_'+s).val()+" "+ $("#transp_n_"+s).val();
+                            var val_type = $('#route_type_'+s).val();
+                            var val_numb =  $("#transp_n_"+s).val();
+                            if(val_type!=="0")current_interview["D"+(s-1)+"_"+code] = val_type;
+                            if(val_numb!=="")current_interview["D"+(s-1)+"_"+code+"_1"] =  val_numb;
+
+                            //total_ans = total_ans+" "+val;
+                        }
                     }
-                    return total_ans;
+
+
                 }
                 var selectTranspBeh = function(e){
                     //e.preventDefault();
@@ -413,7 +442,14 @@
                     if(r_type === "0") {
                         console.log("to next q")
                         //nextStep(code,"NO");
-                        nextStep(code,constructAnsAll());
+                        //nextStep(code,constructAnsAll());
+                        //current_interview[code] = val;
+                        constructAnsAll();
+                        if(code === anket_logic[anket_logic.length-1].code){
+                            finishInterview();
+                        }else{
+                            anketLoop(anket_logic[++curr_elem_index]["code"]);
+                        }
                     }
                     else if(r_type !== "-1")$("#transp_n_"+seq).focus();
                     if(r_type === "1"||r_type === "2"||r_type === "3"||r_type === "4"){
@@ -434,6 +470,8 @@
                 //$("#route_type_"+seq).unbind('keyup');
 
                 $('#route_type_'+seq).on('keyup', function(e){
+                    var temp =  $("#route_type_"+seq).val();
+                    if(temp !== "")
                     if (e.which == 13) {
                         e.preventDefault();
                        selectTranspBeh();
@@ -453,7 +491,7 @@
                     if (temp !== ""){
                         if (e.which == 13 || e.which == 107|| e.which == 187) {
                             e.preventDefault();
-
+                            if(temp === "+") $("#transp_n_"+seq).val('');
                             //$("#house_input").focus();
                             ++seq;
                             registerOneTranspChange(seq);
@@ -498,7 +536,7 @@
                         }
                         if (e.which == 13) {
                             e.preventDefault();
-                            var val = $("#code_input_hours").val()+":"+ $("#code_input_minutes").val();
+                            var val = addzero($("#code_input_hours").val())+":"+ addzero($("#code_input_minutes").val());
                            nextStep(code,val);
                         }
                     }
@@ -556,6 +594,7 @@
                         if (e.which == 107 || e.which == 187) {
                             e.preventDefault();
                             var val =  $('#street_input').val();
+                            if(temp === "+") $("#house_input").val('');
                             nextStep(code,val);
                         }
                     }
@@ -618,18 +657,54 @@
 
 
         };
+
         function finilizeInterview(){
            var time = current_interview["START_TIME_1"];
-           var month = $("#date_month").val();
-           var day = $("#date_day").val();
-           if(month <10) month ='0'+month;
-           if(day <10) day ='0'+day;
+           var month = addzero($("#date_month").val());
+           var day = addzero($("#date_day").val());
 
-            var datetime = "2013-"+month+"-"+day+" "+time;
+
+            var datetime = "2013-"+month+"-"+day+" "+time+":00";
            current_interview["START_TIME_1"] = datetime;
+           /*var start_date = new Date(curr_start).formatted("yyyy-mm-dd h:mm:ss")
+           var finish_date = new Date(curr_finish).formatted("yyyy-mm-dd h:mm:ss")
+*/
+            var formatDate = function(datetime){
+                var start_date = new Date(datetime);
+                var month = addzero(start_date.getMonth());
+                var day = addzero(start_date.getDay());
+                var hours = addzero(start_date.getHours());
+                var minutes = addzero(start_date.getMinutes());
+                var seconds = addzero(start_date.getSeconds());
+                var year = 1900+start_date.getYear();
+
+                start_date = day+"."+month+"."+year+" "+hours+":"+minutes+":"+seconds;
+                return start_date;
+            }
+
+
+            //finish_date = finish_date.toString('yyyy-mm-dd')+" "+finish_date.toTimeString();
+            current_interview["START_TIME"] = formatDate(curr_start);
+            current_interview["END_TIME"] = formatDate(curr_finish);
+            current_interview["Q17"] = int_code;
+            if(!isNaN(route)){
+               current_interview["T2"] = route;
+               if(current_anket_meta["T1"]!=='undefined')current_interview["T1"] = "1";
+            }else{
+               var alts = current_anket_meta["T1"]["alternatives"];
+               for(var s in alts){
+                   if(alts[s]["text"] === route){
+                       current_interview["T1"] = alts[s]["id"];
+                       break;
+                   }
+               }
+            }
+
+
 
         }
         function finishInterview(){
+            curr_finish = new Date().getTime();
             finilizeInterview();
             console.log(JSON.stringify(current_interview));
             total_ints_done++;
@@ -639,10 +714,12 @@
             $("#code_input").val('');
             $("#quest_text").text('');
             $("#panel_stops").html('');
-            curr_finish = new Date().getTime();
+
             curr_elem_index = 0;
-            var timespent = (curr_finish-curr_start)/1000;
+            var timespent = Math.floor((curr_finish-curr_start)/1000);
             addLogRecord(total_ints_done,timespent);
+            actualServerPostInterview(current_interview, $("#login").val(),task_id);
+            current_interview = {};
 
         };
         function initialize() {
@@ -744,7 +821,7 @@
             });
 
 
-        }
+        };
 
         function cancel_change(){
             $('.contextmenu').remove();
@@ -866,6 +943,42 @@
 
             }
 
+        }
+        function actualServerPostInterview(interview,login,task_id){
+            function encode_utf8( s ) {
+                return unescape( encodeURIComponent( s ) );
+            }
+
+            function decode_utf8( s ) {
+                return decodeURIComponent( escape( s ) );
+            }
+            var content = '';
+            for(var s in interview){
+                content +=s+'="'+interview[s]+'" ';
+            }
+            var anket_ans = '<RQ><interview '+content+'/></RQ>';
+            console.log(anket_ans);
+            anket_ans = btoa(encode_utf8(anket_ans));
+            console.log("there");
+            console.log(anket_ans);
+            var xml ='<RQ SERVICE = "MSS" ME = "194.44.143.27" SCREEN = "240" USERID = "46">'+
+                        '<method name = "sitTask" TASK="'+task_id+'" ANSWER="'+anket_ans+'" USERID ="'+login+'" PSWD="default"/>'+
+                    '</RQ>';
+            console.log(xml);
+            $.ajax({
+                        type:"POST",
+                        url:url_post_interview,
+                        data:xml,
+                        contentType: "text/xml",
+                        dataType: "text",
+                        success:function(data){
+                            console.log(data);
+                        },
+                        error:function(data){
+                            alert("Ошибка, сообщите администратору: "+JSON.stringify(data));
+                        }
+                    }
+            );
         }
         function actualServerUpdate(address,lat,lng,login,status){
             $.ajax({
