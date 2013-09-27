@@ -43,7 +43,7 @@
         }
         #panel_session {
             position: absolute;
-            top: 210px;
+            top: 240px;
             left: 20%;
             margin-left: -180px;
             z-index: 5;
@@ -83,10 +83,10 @@
             src="js/vendor/jquery-1.9.1.min.js">
     </script>
     <script type="text/javascript">
-        //var url_get_anket = 'http://localhost/MSS/InfoTransportGetRouteAnket.php';
-        //var url_inpoll_streets = 'http://localhost/InteractiveMaps/js/inpollstreets.json';
-        var url_get_anket = 'http://survey-archive.com/MSS/InfoTransportGetRouteAnket.php';
-        var url_inpoll_streets = 'http://survey-archive.com/InteractiveMaps/js/inpollstreets.json';
+        var url_get_anket = 'http://localhost/MSS/InfoTransportGetRouteAnket.php';
+        var url_inpoll_streets = 'http://localhost/InteractiveMaps/js/inpollstreets.json';
+        //var url_get_anket = 'http://survey-archive.com/MSS/InfoTransportGetRouteAnket.php';
+        //var url_inpoll_streets = 'http://survey-archive.com/InteractiveMaps/js/inpollstreets.json';
 
 
 
@@ -229,7 +229,7 @@
             //console.log(anket_logic);
         }
 
-        var current_interview = [];
+        var current_interview = {};
 
         var loadStreets = function(){
             $.getJSON(url_inpoll_streets, function(data) {
@@ -350,15 +350,23 @@
             if(ikey >= min && ikey <= max) return true;
             return false;
         }
+        var curr_elem_index = 0;
+        var backInLoop = function(){
+            if(curr_elem_index>0){
+                curr_elem_index--;
+                anketLoop(anket_logic[curr_elem_index]["code"]);
+            }
 
+        };
         function anketLoop(code){
 
-            var curr_elem_index = getLogicElementIndex(code);
+            curr_elem_index = getLogicElementIndex(code);
             var curr_elem = getLogicElement(code);
             var curr_type = curr_elem["type"];
             var def_constraint = [];
             var nextStep = function(code, val){
-                current_interview.push({code:code,value:val})
+                //current_interview.push({code:code,value:val})
+                current_interview[code] = val;
                 if(code === anket_logic[anket_logic.length-1].code){
                     finishInterview();
                 }else{
@@ -385,23 +393,36 @@
                     return total_ans;
                 }
                 var selectTranspBeh = function(e){
-                    if (e.which == 13) {
-                        e.preventDefault();
-                        var r_type;
-                        r_type =  $("#route_type_"+seq).val();
-                        console.log(r_type);
-                        if(r_type === "0") {
-                            console.log("to next q")
-                            //nextStep(code,"NO");
+                    //e.preventDefault();
+                    var r_type;
+                    r_type =  $("#route_type_"+seq).val();
+                    console.log(r_type);
+                    if(r_type === "0") {
+                        console.log("to next q")
+                        //nextStep(code,"NO");
+                        nextStep(code,constructAnsAll());
+                    }
+                    else if(r_type !== "-1")$("#transp_n_"+seq).focus();
+                    if(r_type === "1"||r_type === "2"||r_type === "3"||r_type === "4"){
+                        var more = confirm('Ще одна пересадка?');
+                        if(more){
+                            ++seq;
+                            registerOneTranspChange(seq);
+                        }else{
+
                             nextStep(code,constructAnsAll());
                         }
-                        else if(r_type !== "-1")$("#transp_n_"+seq).focus();
                     }
                 };
                 $("#route_type_"+seq).focus();
                 //$("#route_type_"+seq).unbind('keyup');
 
-                $('#route_type_'+seq).on('keyup', selectTranspBeh);
+                $('#route_type_'+seq).on('keyup', function(e){
+                    if (e.which == 13) {
+                        e.preventDefault();
+                       selectTranspBeh();
+                    }
+                });
                 $('#route_type_'+seq).on('change', selectTranspBeh);
 
                 $("#transp_n_"+seq).on('keyup', function(e) {
@@ -560,6 +581,9 @@
                             e.preventDefault();
 
                             var val = $("#code_input").val();
+                            if(curr_type === "defined" && val === "90"){
+                                var val_ext = prompt("Введіть текстову відповідь:");
+                            }
                             nextStep(code,val);
                         }
                     }
@@ -581,6 +605,7 @@
             $("#quest_text").text('');
             $("#panel_stops").html('');
             curr_finish = new Date().getTime();
+            curr_elem_index = 0;
             var timespent = (curr_finish-curr_start)/1000;
             addLogRecord(total_ints_done,timespent);
 
@@ -592,16 +617,55 @@
                 if (e.which == 13) {
                     e.preventDefault();
                     login =  $("#login").val();
-                    $("#date").focus();
+                    $("#date_day").focus();
                 }
             });
-            $('#date').on('keyup', function(e) {
-                if (e.which == 13) {
-                    e.preventDefault();
-                    date =  $("#date").val();
-                    $("#int_code").focus();
+            $('#date_day').on('keyup', function(e) {
+                var temp =  $("#date_day").val();
+                if (temp !== ""){
+                    if(!withinIntConstraint(temp,0,31)) {
+                        //e.preventDefault();
+                        $("#date_day").val('');
+                        return;
+                    }
+                    if (e.which == 13) {
+                        e.preventDefault();
+                        date =  $("#date_day").val();
+                        $("#date_month").focus();
+                    }
                 }
             });
+            $('#date_month').on('keyup', function(e) {
+                var temp =  $("#date_month").val();
+                if (temp !== ""){
+                    if(!withinIntConstraint(temp,0,12)) {
+                        //e.preventDefault();
+                        $("#date_month").val('');
+                        return;
+                    }
+                    if (e.which == 13) {
+                        e.preventDefault();
+                        date =  $("#date_month").val();
+                        $("#int_code").focus();
+                    }
+                }
+            });
+           /* $('#date_year').on('keyup', function(e) {
+                var temp =  $("#date_year").val();
+                if (temp !== ""){
+
+                    if (e.which == 13) {
+                        e.preventDefault();
+                        if(!withinIntConstraint(temp,2013,2014)) {
+                            //e.preventDefault();
+                            $("#date_year").val('');
+                            return;
+                        }
+                        date =  $("#date_year").val();
+                        $("#int_code").focus();
+                    }
+                }
+            });*/
             $('#int_code').on('keyup', function(e) {
                 if (e.which == 13) {
                     e.preventDefault();
@@ -878,10 +942,14 @@
                     '<select id="route_type_'+seq+'" style="width : 200">'+
                     '<option value="-1" selected="true">Выбрать</option>'+
                     '<option value="0">Нет</option>'+
-                    '<option value="1">Маршрутне таксі</option>'+
-                    '<option value="2">Автобус</option>'+
-                    '<option value="3">Тролейбус</option>'+
-                    '<option value="4">Трамвай</option>'+
+                    '<option value="1">Автомобіль</option>'+
+                    '<option value="2">Таксі</option>'+
+                    '<option value="3">Метро</option>'+
+                    '<option value="4">Міська електричка</option>'+
+                    '<option value="5">Маршрутне таксі</option>'+
+                    '<option value="6">Автобус</option>'+
+                    '<option value="7">Трамвай</option>'+
+                    '<option value="8">Тролейбус</option>'+
                     '</select></td>'+
                     '</tr>'+
                     '<tr>'+
@@ -902,10 +970,20 @@
             <td><input id="login"/></td>
         </tr>
         <tr>
-            <td><b>Дата:</b>
+            <td><b>Число:</b>
             </td>
-            <td><input id="date"/></td>
+            <td><input id="date_day"/></td>
         </tr>
+        <tr>
+            <td><b>Місяць:</b>
+            </td>
+            <td><input id="date_month"/></td>
+        </tr>
+       <!-- <tr>
+            <td><b>Рік:</b>
+            </td>
+            <td><input id="date_year"/></td>
+        </tr>-->
         <tr>
             <td><b>Код інтерв’ювера:</b>
             </td>
@@ -941,6 +1019,10 @@
 </div>
 <div id="panel_session">
     <table>
+        <tr>
+            <td colspan="2"><button id="back_q" onclick="backInLoop()"> &lt;&lt;Назад на 1 питання</button>
+            </td>
+        </tr>
         <tr>
             <td><b>Поточне інтерв’ю:</b>
             </td>
