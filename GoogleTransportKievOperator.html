@@ -88,6 +88,7 @@
         var url_inpoll_streets = 'http://localhost/InteractiveMaps/js/inpollstreets.json';
 
         //var url_get_anket = 'http://survey-archive.com/MSS/InfoTransportGetRouteAnket.php';
+        //var url_post_interview = 'http://survey-archive.com/MSS/MainGate.php';
         //var url_inpoll_streets = 'http://survey-archive.com/InteractiveMaps/js/inpollstreets.json';
 
 
@@ -671,8 +672,8 @@
 */
             var formatDate = function(datetime){
                 var start_date = new Date(datetime);
-                var month = addzero(start_date.getMonth());
-                var day = addzero(start_date.getDay());
+                var month = addzero(start_date.getMonth()+1);
+                var day = addzero(start_date.getDate());
                 var hours = addzero(start_date.getHours());
                 var minutes = addzero(start_date.getMinutes());
                 var seconds = addzero(start_date.getSeconds());
