@@ -9,7 +9,7 @@
         #map_canvas { height: 100% }
         #panel {
             position: absolute;
-            top: 5px;
+            top: 10px;
             left: 20%;
             margin-left: -180px;
             z-index: 5;
@@ -20,8 +20,8 @@
         }
         #panel_stops {
             position: absolute;
-            top: 170px;
-            left: 20%;
+            top: 10px;
+            left: 75%;
             margin-left: -180px;
             z-index: 5;
             background-color: #fff;
@@ -31,7 +31,7 @@
         }
         #panel_input {
             position: absolute;
-            top: 50px;
+            top: 10px;
             left: 50%;
             margin-left: -180px;
             z-index: 5;
@@ -39,12 +39,13 @@
             padding: 5px;
             border: 1px solid #999;
             opacity: 0.8;
+            /*width: 300px;*/
         }
         #panel_session {
             position: absolute;
-            top: 5px;
-            left: 80%;
-            margin-right: -120px;
+            top: 210px;
+            left: 20%;
+            margin-left: -180px;
             z-index: 5;
             background-color: #fff;
             padding: 5px;
@@ -82,14 +83,10 @@
             src="js/vendor/jquery-1.9.1.min.js">
     </script>
     <script type="text/javascript">
-        var url_get_anket = 'http://localhost/MSS/InfoTransportGetRouteAnket.php';
-        //var url_data = 'http://survey-archive.com/InteractiveMaps/js/addresses_geo3.json';
-        //var url_fixer_get = "http://localhost/MSS/FixTransportListApproxGeocodedRandom.php";
-        //var url_fixer_get = "http://survey-archive.com/MSS/FixTransportListApproxGeocodedRandom.php";
-        //var url_fixer_save = "http://localhost/MSS/FixGeocodeUpdateTransport.php";
-        //var url_fixer_save = "http://survey-archive.com/MSS/FixGeocodeUpdateTransport.php";
-        //var cache_url = 'http://localhost/InteractiveMaps/php/geocache.php';
-        //var cache_url = 'http://survey-archive.com/InteractiveMaps/php/geocache.php';
+        //var url_get_anket = 'http://localhost/MSS/InfoTransportGetRouteAnket.php';
+        //var url_inpoll_streets = 'http://localhost/InteractiveMaps/js/inpollstreets.json';
+        var url_get_anket = 'http://survey-archive.com/MSS/InfoTransportGetRouteAnket.php';
+        var url_inpoll_streets = 'http://survey-archive.com/InteractiveMaps/js/inpollstreets.json';
 
 
 
@@ -102,14 +99,144 @@
         var login;
         var route;
         var route_type;
-        var total_addresses = 0;
-        var changed_addresses = 0;
-        var skipped_addresses = 0;
+        var total_ints_done = 0;
+
         var current_anket_meta;
+        var inpoll_streets;
+        var street_codes_constraint = [];
         var current_stops;
         var stops_var_code_1;
         var stops_var_code_2;
+        var getTextFromMeta = function(code){
+            console.log(code);
+            return current_anket_meta[code]["question"];
+        };
+        var getAltsFromMeta = function(code){
+            console.log(code);
+            return current_anket_meta[code]["alternatives"];
+        };
+        var anket_logic;
+        var initAnketLogic = function()
+        {
+            anket_logic = [
+                {
+                    code:"START_TIME_1",
+                    type:"datetime",
+                    //text:getTextFromMeta(this.code),
+                    shorttext: "Час початку"
+                },
+                {
+                    code:stops_var_code_1,
+                    shorttext: "Зайшли",
+                    type:"defined",
+                    alternatives:getAltsFromMeta(stops_var_code_1)
+                },
+                {
+                    code:"Q2",
+                    shorttext: "Чекали",
+                    type:"integer",
+                    range_max:120,
+                    range_min:0
 
+                },
+                {
+                    code:"Q5",
+                    shorttext: "Пересадки до",
+                    type:"text",
+                    multi:true
+                },
+                {
+                    code:stops_var_code_2,
+                    shorttext: "Вийдите",
+                    type:"defined",
+                    alternatives:getAltsFromMeta(stops_var_code_2)
+                },
+                {
+                    code:"Q9",
+                    shorttext: "Пересадки після",
+                    type:"text",
+                    multi:true
+                },
+                {
+                    code:"Q10",
+                    type:"text",
+                    shorttext: "Адреса початку",
+                    code_referenced:true
+                },
+                {
+                    code:"Q11",
+                    type:"text",
+                    shorttext: "Адреса кінця",
+                    code_referenced:true
+
+                },
+                {
+                    code:"Q12",
+                    shorttext: "Задоволеність поїздкою",
+                    type:"defined",
+                    alternatives:getAltsFromMeta("Q12")
+                },
+                {
+                    code:"Q13_1",
+                    shorttext: "Частота руху",
+                    type:"defined",
+                    alternatives:getAltsFromMeta("Q13_1")
+                },
+                {
+                    code:"Q13_2",
+                    shorttext: "Наповненість салону", type:"defined",
+                    alternatives:getAltsFromMeta("Q13_2")
+
+                },
+                {
+                    code:"Q13_3",
+                    shorttext: "Час поїздки",
+                    type:"defined",
+                    alternatives:getAltsFromMeta("Q13_3")
+                },
+                {
+                    code:"Q13_4",
+                    shorttext: "Чистота і зручність",
+                    type:"defined",
+                    alternatives:getAltsFromMeta("Q13_4")
+                },
+                {
+                    code:"Q13_5",
+                    shorttext: "Надійність маршруту",
+                    type:"defined",
+                    alternatives:getAltsFromMeta("Q13_5")
+                },
+                {
+                    code:"Q13_6",
+                    shorttext: "Температура повітря",
+                    type:"defined",
+                    alternatives:getAltsFromMeta("Q13_6")
+                },
+                {
+                    code:"Q14",
+                    shorttext: "Перебування в Києві",
+                    type:"defined",
+                    alternatives:getAltsFromMeta("Q14")
+                },
+                {
+                    code:"Q16",
+                    shorttext: "Мова",
+                    type:"defined",
+                    alternatives:getAltsFromMeta("Q16")
+                }
+            ];
+            //console.log("here");
+            //console.log(anket_logic);
+        }
+
+        var current_interview = [];
+
+        var loadStreets = function(){
+            $.getJSON(url_inpoll_streets, function(data) {
+                inpoll_streets = data;
+                for(var s in data) street_codes_constraint.push(s);
+            });
+        }
         var loadAnket = function(transp_type,transp_number){
             current_anket_meta = null
             current_stops = null
@@ -119,9 +246,10 @@
                  task_id = data["MSS_ID"];
                  current_anket_meta = data["PASSPORT"]
 
-                 console.log(current_anket_meta);
+                 //console.log(current_anket_meta);
                  for(var ss in current_anket_meta){
                      var some = current_anket_meta[ss];
+                     //console.log(some);
                      var sss = some["question"];
                      //console.log(sss);
                      if(sss.indexOf("_") !=-1 && (sss.indexOf("A")!=-1 || sss.indexOf("B")!=-1 || sss.indexOf("C")!=-1 || sss.indexOf("D")!=-1)){
@@ -154,7 +282,11 @@
                      alert("Маршрут не найден!");
                      $("#panel_stops").empty();
                  }
-                 else startAnket();
+                 else {
+                     //console.log("tuta");
+                     initAnketLogic();
+                     startAnket();
+                 }
                  //alert(task_id);
             });
         }
@@ -165,152 +297,296 @@
             }
 
         }
-
-        var current_question = "START_TIME_1"
-        var getTextFromMeta = function(code){
-            return current_anket_meta[code]["question"];
-        };
-        var getAltsFromMeta = function(code){
-            return current_anket_meta[code]["alternatives"];
-        };
-        var anket_logic = [
-            {
-                code:"START_TIME_1",
-                type:"datetime",
-                text:getTextFromMeta(this.code),
-                shorttext: "Час початку"
-            },
-            {
-                code:stops_var_code_1,
-                shorttext: "Зайшли",
-                type:"defined",
-                alternatives:getAltsFromMeta(this.code)
-            },
-            {
-                code:"Q2",
-                shorttext: "Чекали",
-                type:"integer"
-            },
-            {
-                code:"Q5",
-                shorttext: "Пересадки до",
-                type:"text",
-                multi:true
-            },
-            {
-                code:stops_var_code_2,
-                shorttext: "Вийдите",
-                type:"defined",
-                alternatives:getAltsFromMeta(this.code)
-            },
-            {
-                code:"Q9",
-                shorttext: "Пересадки після",
-                type:"text",
-                multi:true
-            },
-            {
-                code:"Q10",
-                type:"text",
-                shorttext: "Адреса початку"
-            },
-            {
-                code:"Q11",
-                type:"text",
-                shorttext: "Адреса кінця"
-            },
-            {
-                code:"Q12",
-                shorttext: "Задоволеність поїздкою",
-                type:"defined",
-                alternatives:getAltsFromMeta(this.code)
-            },
-            {
-                code:"Q13_1",
-                shorttext: "Частота руху",
-                type:"defined",
-                alternatives:getAltsFromMeta(this.code)
-            },
-            {
-                code:"Q13_2",
-                shorttext: "Наповненість салону", type:"defined",
-                alternatives:getAltsFromMeta(this.code)
-
-            },
-            {
-                code:"Q13_3",
-                shorttext: "Час поїздки",
-                type:"defined",
-                alternatives:getAltsFromMeta(this.code)
-            },
-            {
-                code:"Q13_4",
-                shorttext: "Чистота і зручність",
-                type:"defined",
-                alternatives:getAltsFromMeta(this.code)
-            },
-            {
-                code:"Q13_5",
-                shorttext: "Надійність маршруту",
-                type:"defined",
-                alternatives:getAltsFromMeta(this.code)
-            },
-            {
-                code:"Q13_6",
-                shorttext: "Температура повітря",
-                type:"defined",
-                alternatives:getAltsFromMeta(this.code)
-            },
-            {
-                code:"Q14",
-                shorttext: "Перебування в Києві",
-                type:"defined",
-                alternatives:getAltsFromMeta(this.code)
-            },
-            {
-                code:"Q16",
-                shorttext: "Мова",
-                type:"defined",
-                alternatives:getAltsFromMeta(this.code)
+        function showAlts(alts){
+            $("#panel_stops").empty();
+            for(var ss in alts){
+                $("#panel_stops").append("<b>"+alts[ss]["id"]+". "+alts[ss]["text"]+"</b></br>");
             }
-        ]
-        var current_interview = []
-        function startAnket(){
-            showStops();
-            $("#code_input").focus();
 
         }
+
+        var current_question = "START_TIME_1";
+        var curr_start;
+        var curr_finish;
+        function startAnket(){
+           //showStops();
+            curr_start = new Date().getTime();
+            var curr = total_ints_done+1
+            $("#stat_curr").text(''+curr);
+            $("#panel_stops").html('');
+            anketLoop("START_TIME_1");
+        };
         function getLogicElement(code){
             for(var s in anket_logic){
                 if(anket_logic[s]["code"]===code){
                     return  anket_logic[s];
                 }
             }
-        }
-        function anketLoop(code){
-            $("#quest_text").text(getLogicElement(code)["shorttext"]);
-            //$("#quest_text").text(anket_logic[code]["shorttext"]);
-            $('#code_input').unbind('keyup');
+            return null;
+        };
+        function getLogicElementIndex(code){
+            for(var s in anket_logic){
+                if(anket_logic[s]["code"]===code){
+                    return  s;
+                }
+            }
+            return -1;
+        };
+        function withinDefConstraint(key,constr){
+            //console.log(key);
+            //console.log(constr);
 
-            $('#code_input').on('keyup', function(e) {
-                var temp =  $("#code_input").val();
-                if (temp !== "")
+            if(isNaN(parseInt(key)))return false;
+            //console.log("there");
+            console.log(constr);
+            for(var s in constr){
+                 if(constr[s].indexOf(key)!=-1) return true;
+            }
+            return false;
+        }
+        function withinIntConstraint(key,min,max){
+            var ikey = parseInt(key);
+            if(isNaN(ikey))return false;
+            if(ikey >= min && ikey <= max) return true;
+            return false;
+        }
+
+        function anketLoop(code){
+
+            var curr_elem_index = getLogicElementIndex(code);
+            var curr_elem = getLogicElement(code);
+            var curr_type = curr_elem["type"];
+            var def_constraint = [];
+            var nextStep = function(code, val){
+                current_interview.push({code:code,value:val})
+                if(code === anket_logic[anket_logic.length-1].code){
+                    finishInterview();
+                }else{
+                    anketLoop(anket_logic[++curr_elem_index]["code"]);
+                }
+            };
+            $("#panel_stops").empty();
+            if(curr_type==="defined") {
+                showAlts(curr_elem["alternatives"])
+
+                for(var s in curr_elem["alternatives"]){
+                    def_constraint.push(curr_elem["alternatives"][s]["id"]);
+                }
+            }
+
+            var registerOneTranspChange = function(seq){
+                addTransportChangeInputForm(seq);
+                var constructAnsAll = function(){
+                    var total_ans = "";
+                    for(var s = 1; s <= seq;s++){
+                        var val =  $('#route_type_'+s).val()+" "+ $("#transp_n_"+s).val();
+                        total_ans = total_ans+" "+val;
+                    }
+                    return total_ans;
+                }
+                var selectTranspBeh = function(e){
                     if (e.which == 13) {
                         e.preventDefault();
-
-                        var val = $("#code_input").val();
-                        current_interview.push({code:code,value:val})
+                        var r_type;
+                        r_type =  $("#route_type_"+seq).val();
+                        console.log(r_type);
+                        if(r_type === "0") {
+                            console.log("to next q")
+                            //nextStep(code,"NO");
+                            nextStep(code,constructAnsAll());
+                        }
+                        else if(r_type !== "-1")$("#transp_n_"+seq).focus();
                     }
-            });
-            if(code === anket_logic[anket_logic.length-1].code){
-               finishInterview();
+                };
+                $("#route_type_"+seq).focus();
+                //$("#route_type_"+seq).unbind('keyup');
+
+                $('#route_type_'+seq).on('keyup', selectTranspBeh);
+                $('#route_type_'+seq).on('change', selectTranspBeh);
+
+                $("#transp_n_"+seq).on('keyup', function(e) {
+
+                    var temp =  $("#transp_n_"+seq).val();
+                    var r_type;
+                    r_type =  $("#route_type_"+seq).val();
+                    if(r_type === "-1") {
+                        $("#route_type_"+seq).focus();
+                        return;
+                    }
+                    if (temp !== ""){
+                        if (e.which == 13) {
+                            e.preventDefault();
+
+                            //$("#house_input").focus();
+                            var more = confirm('Ще одна пересадка?');
+                            if(more){
+                                ++seq;
+                                registerOneTranspChange(seq);
+                            }else{
+
+                                nextStep(code,constructAnsAll());
+                            }
+
+                        }
+                    }
+                });
             }
+
+            if(curr_type === "datetime"){
+                setTimeInputForm();
+                $("#code_input_hours").focus();
+                $('#code_input_hours').on('keyup', function(e) {
+                    var temp =  $("#code_input_hours").val();
+                    if (temp !== ""){
+                       if(!withinIntConstraint(temp,0,24)) {
+                            //e.preventDefault();
+                            $("#code_input_hours").val('');
+                            return;
+                        }
+                        if (e.which == 13) {
+                            e.preventDefault();
+                            $("#code_input_minutes").focus();
+                        }
+                    }
+                });
+                $('#code_input_minutes').on('keyup', function(e) {
+                    var temp =  $("#code_input_minutes").val();
+                    if (temp !== ""){
+                        if(!withinIntConstraint(temp,0,60)) {
+                            //e.preventDefault();
+                            $("#code_input_minutes").val('');
+                            return;
+                        }
+                        if (e.which == 13) {
+                            e.preventDefault();
+                            var val = $("#code_input_hours").val()+":"+ $("#code_input_minutes").val();
+                           nextStep(code,val);
+                        }
+                    }
+                });
+            }else
+            if(curr_type === "defined" || curr_type === "integer"){
+                setStandardInputForm();
+                $("#code_input").focus();
+
+            }else
+            if(curr_type === "text" && curr_elem["code_referenced"]===true){
+                setCodedAddressInputForm();
+                $("#code_street").focus();
+                $('#code_street').unbind('keyup');
+                $('#code_street').val('');
+                $('#code_street').on('keyup', function(e) {
+
+                    var temp =  $("#code_street").val();
+                    if (temp !== ""){
+
+                        if(!withinDefConstraint(temp,street_codes_constraint)) {
+                            //e.preventDefault();
+                            $("#code_street").val('');
+                            return;
+                        }
+                        if (e.which == 13) {
+                            e.preventDefault();
+                            var val = $("#code_street").val();
+                            var inpoll_street = inpoll_streets[val];
+                            $("#street_input").val(inpoll_street);
+                            $("#street_input").focus();
+
+                        }
+                    }
+                });
+                $('#street_input').on('keyup', function(e) {
+
+                    var temp =  $("#street_input").val();
+                    if (temp !== ""){
+                    if (e.which == 13) {
+                            e.preventDefault();
+                            $("#house_input").focus();
+                        }
+                    }
+                });
+                $('#house_input').on('keyup', function(e) {
+
+                    var temp =  $("#house_input").val();
+                    if (temp !== ""){
+                        if (e.which == 13) {
+                            e.preventDefault();
+                            var val =  $('#street_input').val()+" "+ $("#house_input").val();
+                            nextStep(code,val);
+                        }
+                    }
+                });
+            }else
+            if(curr_type === "text" && curr_elem["multi"]===true){
+                var seq = 1;
+                $('#panel_input').html('');
+                registerOneTranspChange(seq);
+
+            }
+                $("#quest_text").text(curr_elem["shorttext"]);
+
+
+
+
+
+
+                //$("#quest_text").text(anket_logic[code]["shorttext"]);
+                $('#code_input').unbind('keyup');
+                $('#code_input').val('');
+
+
+
+
+
+                $('#code_input').on('keyup', function(e) {
+
+                    var temp =  $("#code_input").val();
+                    if (temp !== ""){
+                        if(curr_type === "defined"){
+                            if(!withinDefConstraint(temp,def_constraint)) {
+                                //e.preventDefault();
+                                $("#code_input").val('');
+                                return;
+                            }
+                        }
+                        if(curr_type === "integer"){
+                            if(!withinIntConstraint(temp,curr_elem["range_min"],curr_elem["range_max"])) {
+                                //e.preventDefault();
+                                $("#code_input").val('');
+                                return;
+                            }
+                        }
+                        if (e.which == 13) {
+                            e.preventDefault();
+
+                            var val = $("#code_input").val();
+                            nextStep(code,val);
+                        }
+                    }
+                });
+
+            //function
+
+
+
+
         };
         function finishInterview(){
-           console.log(current_interview);
+           console.log(JSON.stringify(current_interview));
+            total_ints_done++;
+            $("#stat_total").text(''+total_ints_done);
+
+            $("#login").focus();
+            $("#code_input").val('');
+            $("#quest_text").text('');
+            $("#panel_stops").html('');
+            curr_finish = new Date().getTime();
+            var timespent = (curr_finish-curr_start)/1000;
+            addLogRecord(total_ints_done,timespent);
+
         };
         function initialize() {
-
+            loadStreets();
             $("#login").focus();
             $('#login').on('keyup', function(e) {
                 if (e.which == 13) {
@@ -357,7 +633,7 @@
                 }
             });
 
-            $("#stat_total").text(''+total_addresses);
+            $("#stat_total").text(''+total_ints_done);
 
 
 
@@ -531,6 +807,90 @@
 
             }
         }
+
+
+        var addLogRecord = function(seq,time){
+            $('#panel_session').append("</br><span>№ "+seq+" "+time+"с</span>");
+        }
+        var setStandardInputForm = function(){
+            $('#panel_input').html( '<table>'+
+                    '<tr>'+
+                    '<td><b>Питання:</b>'+
+                    '</td>'+
+                    '<td><span id="quest_text"/></td>'+
+                    '</tr>'+
+                    '<tr>'+
+                    '<td><b>Відповідь:</b>'+
+                    '</td>'+
+                    '<td><input id="code_input"/></td>'+
+                    '</tr>'+
+             '</table>');
+        };
+
+        var setTimeInputForm = function(){
+            $('#panel_input').html( '<table>'+
+                    '<tr>'+
+                    '<td><b>Питання:</b>'+
+                    '</td>'+
+                    '<td><span id="quest_text"/></td>'+
+                    '</tr>'+
+                    '<tr>'+
+                    '<td><b>Години:</b>'+
+                    '</td>'+
+                    '<td><input id="code_input_hours"/></td>'+
+                    '</tr>'+
+                    '<td><b>Хвилини:</b>'+
+                    '</td>'+
+                    '<td><input id="code_input_minutes"/></td>'+
+                    '</tr>'+
+                    '</table>');
+        };
+        var setCodedAddressInputForm = function(){
+            $('#panel_input').html( '<table>'+
+                    '<tr>'+
+                    '<td><b>Питання:</b>'+
+                    '</td>'+
+                    '<td><span id="quest_text"/></td>'+
+                    '</tr>'+
+                    '<tr>'+
+                    '<td><b>Код вулиці:</b>'+
+                    '</td>'+
+                    '<td><input id="code_street"/></td>'+
+                    '</tr>'+
+                    '<tr>'+
+                    '<td><b>Вулиця:</b>'+
+                    '</td>'+
+                    '<td><input id="street_input" size="35"/></td>'+
+                    '</tr>'+
+                    '<tr>'+
+                    '<td><b>Будинок:</b>'+
+                    '</td>'+
+                    '<td><input id="house_input"/></td>'+
+                    '</tr>'+
+                    '</table>');
+        };
+        var addTransportChangeInputForm = function(seq){
+            $('#panel_input').append( '<table>'+
+                    '<tr>'+
+                    '<td><b>Пересадка:</b>'+
+                    '</td>'+
+                    '<td>'+
+                    '<select id="route_type_'+seq+'" style="width : 200">'+
+                    '<option value="-1" selected="true">Выбрать</option>'+
+                    '<option value="0">Нет</option>'+
+                    '<option value="1">Маршрутне таксі</option>'+
+                    '<option value="2">Автобус</option>'+
+                    '<option value="3">Тролейбус</option>'+
+                    '<option value="4">Трамвай</option>'+
+                    '</select></td>'+
+                    '</tr>'+
+                    '<tr>'+
+                    '<td><b>Номер :</b>'+
+                    '</td>'+
+                    '<td><input id="transp_n_'+seq+'"/></td>'+
+                    '</tr>'+
+                    '</table>');
+        };
     </script>
 </head>
 <body onload="initialize()">
@@ -572,42 +932,28 @@
     </table>
 
 </div>
+
 <div id="panel_stops">
-
 </div>
-<div id="panel_input">
-    <table>
-        <tr>
-            <td><b>Вопрос:</b><span id="quest_text"/>
-            </td>
-        </tr>
-        <tr>
-            <td><b>Альтернативы:</b><span id="alts"/>
-            </td>
-        </tr>
-        <tr>
-            <td><b>Ответ:</b><input id="code_input"/>
-            </td>
-        </tr>
 
-    </table>
+<div id="panel_input">
+
 </div>
 <div id="panel_session">
     <table>
         <tr>
-            <td><b>Изменено:</b><span id="stat_changed"/>
+            <td><b>Поточне інтерв’ю:</b>
             </td>
+            <td><span id="stat_curr"/></td>
         </tr>
         <tr>
-            <td><b>Пропущено:</b><span id="stat_skipped"/>
+            <td><b>Відправлено:</b>
             </td>
-        </tr>
-        <tr>
-            <td><b>Всего:</b><span id="stat_total"/>
-            </td>
+            <td><span id="stat_total"/></td>
         </tr>
 
     </table>
+    <span><b>Лог</b></span>
 </div>
 
 <div id="map_canvas" style="width:100%; height:100%"></div>
