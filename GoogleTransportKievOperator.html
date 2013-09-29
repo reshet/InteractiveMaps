@@ -83,13 +83,13 @@
             src="js/vendor/jquery-1.9.1.min.js">
     </script>
     <script type="text/javascript">
-        var url_get_anket = 'http://localhost/MSS/InfoTransportGetRouteAnket.php';
-        var url_post_interview = 'http://localhost/MSS/MainGate.php';
-        var url_inpoll_streets = 'http://localhost/InteractiveMaps/js/inpollstreets.json';
+        //var url_get_anket = 'http://localhost/MSS/InfoTransportGetRouteAnket.php';
+        //var url_post_interview = 'http://localhost/MSS/MainGate.php';
+        //var url_inpoll_streets = 'http://localhost/InteractiveMaps/js/inpollstreets.json';
 
-        //var url_get_anket = 'http://survey-archive.com/MSS/InfoTransportGetRouteAnket.php';
-        //var url_post_interview = 'http://survey-archive.com/MSS/MainGate.php';
-        //var url_inpoll_streets = 'http://survey-archive.com/InteractiveMaps/js/inpollstreets.json';
+        var url_get_anket = 'http://survey-archive.com/MSS/InfoTransportGetRouteAnket.php';
+        var url_post_interview = 'http://survey-archive.com/MSS/MainGate.php';
+        var url_inpoll_streets = 'http://survey-archive.com/InteractiveMaps/js/inpollstreets.json';
 
 
 
@@ -98,7 +98,7 @@
         var task_id;
         var task_desc;
         var int_code;
-        var date;
+        var date_day,date_month;
         var login;
         var route;
         var prev_route = null;
@@ -123,6 +123,7 @@
             return current_anket_meta[code]["alternatives"];
         };
         var anket_logic;
+        var anket_tree = {};
         var initAnketLogic = function()
         {
             anket_logic = [
@@ -154,7 +155,7 @@
                 },
                 {
                     code:stops_var_code_2,
-                    shorttext: "Вийдите",
+                    shorttext: "Вийдете",
                     type:"defined",
                     alternatives:getAltsFromMeta(stops_var_code_2)
                 },
@@ -352,6 +353,7 @@
             //console.log(constr);
 
             if(isNaN(parseInt(key)))return false;
+
             //console.log("there");
             //console.log(constr);
             for(var s in constr){
@@ -372,7 +374,13 @@
                 anketLoop(anket_logic[curr_elem_index]["code"]);
                 if(current_interview[anket_logic[curr_elem_index]["code"]]!=='undefined'){
                     $("#code_input").val(current_interview[anket_logic[curr_elem_index]["code"]]);
+                    $("#street_input").val(current_interview[anket_logic[curr_elem_index]["code"]]);
                 }
+               /* if(anket_tree[anket_logic[curr_elem_index]["code"]]!=='undefined'){
+                    $("#panel_input").html(anket_tree[anket_logic[curr_elem_index]["code"]]["input"]);
+                    $("#panel_stops").html(anket_tree[anket_logic[curr_elem_index]["code"]]["alts"]);
+
+                }*/
             }
 
         };
@@ -389,6 +397,10 @@
             var nextStep = function(code, val){
                 //current_interview.push({code:code,value:val})
                 current_interview[code] = val;
+               /* anket_tree[code] = {"input": $('#panel_input').html(),
+                    "alts":$('#panel_stops').html()
+                }*/
+
                 if(code === anket_logic[anket_logic.length-1].code){
                     finishInterview();
                 }else{
@@ -446,6 +458,10 @@
                         //nextStep(code,constructAnsAll());
                         //current_interview[code] = val;
                         constructAnsAll();
+                        /*anket_tree[code] = {"input": $('#panel_input').html(),
+                            "alts":$('#panel_stops').html()
+                        }*/
+
                         if(code === anket_logic[anket_logic.length-1].code){
                             finishInterview();
                         }else{
@@ -537,7 +553,7 @@
                         }
                         if (e.which == 13) {
                             e.preventDefault();
-                            var val = addzero($("#code_input_hours").val())+":"+ addzero($("#code_input_minutes").val());
+                            var val = addzero(parseInt($("#code_input_hours").val(),10))+":"+ addzero(parseInt($("#code_input_minutes").val(),10));
                            nextStep(code,val);
                         }
                     }
@@ -551,18 +567,24 @@
             if(curr_type === "text" && curr_elem["code_referenced"]===true){
                 setCodedAddressInputForm();
                 $("#code_street").focus();
-                $('#code_street').unbind('keyup');
                 $('#code_street').val('');
                 $('#code_street').on('keyup', function(e) {
 
                     var temp =  $("#code_street").val();
                     if (temp !== ""){
+                        if (e.which == 107 || e.which == 187) {
+                            e.preventDefault();
+                            if(temp === "+"){
+                                $("#code_street").val('');
+                                $("#street_input").focus();
+                            }
 
+                        }else
                         if(!withinDefConstraint(temp,street_codes_constraint)) {
                             //e.preventDefault();
                             $("#code_street").val('');
                             return;
-                        }
+                        }else
                         if (e.which == 13) {
                             e.preventDefault();
                             var val = $("#code_street").val();
@@ -571,6 +593,7 @@
                             $("#street_input").focus();
 
                         }
+
                     }
                 });
                 $('#street_input').on('keyup', function(e) {
@@ -581,6 +604,14 @@
                             e.preventDefault();
                             $("#house_input").focus();
                         }
+                    }
+                    if (e.which == 107 || e.which == 187) {
+                        e.preventDefault();
+                        if(temp === "+"){
+                            $("#street_input").val('');
+                            $("#orient_input").focus();
+                        }
+
                     }
                 });
                 $('#house_input').on('keyup', function(e) {
@@ -595,8 +626,28 @@
                         if (e.which == 107 || e.which == 187) {
                             e.preventDefault();
                             var val =  $('#street_input').val();
-                            if(temp === "+") $("#house_input").val('');
-                            nextStep(code,val);
+                            if(temp === "+"){
+                                if(val !== ""){
+                                    $("#house_input").val('');
+                                    nextStep(code,val);
+                                }else{
+                                    e.preventDefault();
+                                    $("#orient_input").focus();
+                                }
+                            }
+
+                        }
+                    }
+                });
+                $('#orient_input').on('keyup', function(e) {
+
+                    var temp =  $("#orient_input").val();
+                    if (temp !== ""){
+                        if (e.which == 13) {
+                            e.preventDefault();
+                            //var val =  $('#street_input').val()+" "+ $("#house_input").val();
+                            var val_orient =  $('#orient_input').val();
+                            nextStep(code+"_1",val_orient);
                         }
                     }
                 });
@@ -646,6 +697,13 @@
                             var val = $("#code_input").val();
                             if(curr_type === "defined" && val === "90"){
                                 var val_ext = prompt("Введіть текстову відповідь:");
+                                var other_code = code.substr(0,1)+'2';
+                                current_interview[other_code] = val_ext;
+
+                            }
+                            if(curr_type === "defined" && val === "0"){
+                                $("#code_input").val('');
+                                return;
                             }
                             nextStep(code,val);
                         }
@@ -661,8 +719,8 @@
 
         function finilizeInterview(){
            var time = current_interview["START_TIME_1"];
-           var month = addzero($("#date_month").val());
-           var day = addzero($("#date_day").val());
+           var month = addzero(parseInt($("#date_month").val(),10));
+           var day = addzero(parseInt($("#date_day").val(),10));
 
 
             var datetime = "2013-"+month+"-"+day+" "+time+":00";
@@ -743,7 +801,7 @@
                     }
                     if (e.which == 13) {
                         e.preventDefault();
-                        date =  $("#date_day").val();
+                        date_day =  $("#date_day").val();
                         $("#date_month").focus();
                     }
                 }
@@ -758,7 +816,7 @@
                     }
                     if (e.which == 13) {
                         e.preventDefault();
-                        date =  $("#date_month").val();
+                        date_month =  $("#date_month").val();
                         $("#int_code").focus();
                     }
                 }
@@ -805,7 +863,11 @@
                 if (e.which == 13) {
                     e.preventDefault();
                     route =  $("#route").val();
-
+                    route_type =  $("#route_type").val();
+                    int_code =  $("#int_code").val();
+                    date_month =  parseInt($("#date_month").val(),10);
+                    date_day =  parseInt($("#date_day").val(),10);
+                    login =  $("#login").val();
 
                     loadAnket(route_type,route);
                     prev_route  = route;
@@ -1087,6 +1149,11 @@
                     '<td><b>Будинок:</b>'+
                     '</td>'+
                     '<td><input id="house_input"/></td>'+
+                    '</tr>'+
+                    '<tr>'+
+                    '<td><b>Або орієнтир:</b>'+
+                    '</td>'+
+                    '<td><input id="orient_input"/></td>'+
                     '</tr>'+
                     '</table>');
         };
