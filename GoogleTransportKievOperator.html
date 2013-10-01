@@ -262,7 +262,7 @@
                  task_id = data["MSS_ID"];
                  current_anket_meta = data["PASSPORT"]
 
-                 //console.log(current_anket_meta);
+                 console.log(current_anket_meta);
                  for(var ss in current_anket_meta){
                      var some = current_anket_meta[ss];
                      //console.log(some);
@@ -316,7 +316,7 @@
         function showAlts(alts){
             $("#panel_stops").empty();
             for(var ss in alts){
-                $("#panel_stops").append("<b>"+alts[ss]["id"]+". "+alts[ss]["text"]+"</b></br>");
+                $("#panel_stops").append("<b>"+alts[ss]["id"]+"("+String.fromCharCode(65 + parseInt(alts[ss]["id"]-1,10))+"). "+alts[ss]["text"]+"</b></br>");
             }
 
         }
@@ -621,7 +621,9 @@
                         if (e.which == 13) {
                             e.preventDefault();
                             var val =  $('#street_input').val()+" "+ $("#house_input").val();
-                            nextStep(code,val);
+                            current_interview[code] = val;
+                            $("#orient_input").focus();
+                            //nextStep(code,val);
                         }
                         if (e.which == 107 || e.which == 187) {
                             e.preventDefault();
@@ -629,7 +631,9 @@
                             if(temp === "+"){
                                 if(val !== ""){
                                     $("#house_input").val('');
-                                    nextStep(code,val);
+                                    current_interview[code] = val;
+                                    $("#orient_input").focus();
+                                    //nextStep(code,val);
                                 }else{
                                     e.preventDefault();
                                     $("#orient_input").focus();
@@ -648,6 +652,23 @@
                             //var val =  $('#street_input').val()+" "+ $("#house_input").val();
                             var val_orient =  $('#orient_input').val();
                             nextStep(code+"_1",val_orient);
+                        }
+                        if (e.which == 107 || e.which == 187) {
+                            e.preventDefault();
+                            var val =  $('#street_input').val();
+
+                            if(temp === "+"){
+                                if(val !== ""){
+                                    $("#orient_input").val('');
+                                    var val =  $('#street_input').val()+" "+ $("#house_input").val();
+                                    //current_interview[code] = val;
+                                    nextStep(code,val);
+                                }else{
+                                    e.preventDefault();
+                                    $("#orient_input").focus();
+                                }
+                            }
+
                         }
                     }
                 });
