@@ -83,13 +83,13 @@
             src="js/vendor/jquery-1.9.1.min.js">
     </script>
     <script type="text/javascript">
-        //var url_get_anket = 'http://localhost/MSS/InfoTransportGetRouteAnket.php';
-        //var url_post_interview = 'http://localhost/MSS/MainGate.php';
-        //var url_inpoll_streets = 'http://localhost/InteractiveMaps/js/inpollstreets.json';
+        var url_get_anket = 'http://localhost/MSS/InfoTransportGetRouteAnket.php';
+        var url_post_interview = 'http://localhost/MSS/MainGate.php';
+        var url_inpoll_streets = 'http://localhost/InteractiveMaps/js/inpollstreets.json';
 
-        var url_get_anket = 'http://survey-archive.com/MSS/InfoTransportGetRouteAnket.php';
-        var url_post_interview = 'http://survey-archive.com/MSS/MainGate.php';
-        var url_inpoll_streets = 'http://survey-archive.com/InteractiveMaps/js/inpollstreets.json';
+        //var url_get_anket = 'http://survey-archive.com/MSS/InfoTransportGetRouteAnket.php';
+        //var url_post_interview = 'http://survey-archive.com/MSS/MainGate.php';
+        //var url_inpoll_streets = 'http://survey-archive.com/InteractiveMaps/js/inpollstreets.json';
 
 
 
@@ -313,10 +313,16 @@
             }
 
         }
-        function showAlts(alts){
+        function showAlts(alts,code){
             $("#panel_stops").empty();
             for(var ss in alts){
-                $("#panel_stops").append("<b>"+alts[ss]["id"]+"("+String.fromCharCode(65 + parseInt(alts[ss]["id"]-1,10))+"). "+alts[ss]["text"]+"</b></br>");
+                if(code === "Q12" || code === "Q14"){
+                    $("#panel_stops").append("<b>"+alts[ss]["id"]+"("+String.fromCharCode(65 + parseInt(alts[ss]["id"]-1,10))+"). "+alts[ss]["text"]+"</b></br>");
+                } else{
+                    $("#panel_stops").append("<b>"+alts[ss]["id"]+". "+alts[ss]["text"]+"</b></br>");
+
+                }
+
             }
 
         }
@@ -409,7 +415,7 @@
             };
             $("#panel_stops").empty();
             if(curr_type==="defined") {
-                showAlts(curr_elem["alternatives"])
+                showAlts(curr_elem["alternatives"],code)
 
                 for(var s in curr_elem["alternatives"]){
                     def_constraint.push(curr_elem["alternatives"][s]["id"]);
