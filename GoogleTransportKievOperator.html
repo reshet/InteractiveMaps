@@ -83,13 +83,13 @@
             src="js/vendor/jquery-1.9.1.min.js">
     </script>
     <script type="text/javascript">
-        var url_get_anket = 'http://localhost/MSS/InfoTransportGetRouteAnket.php';
-        var url_post_interview = 'http://localhost/MSS/MainGate.php';
-        var url_inpoll_streets = 'http://localhost/InteractiveMaps/js/inpollstreets.json';
+        //var url_get_anket = 'http://localhost/MSS/InfoTransportGetRouteAnket.php';
+        //var url_post_interview = 'http://localhost/MSS/MainGate.php';
+        //var url_inpoll_streets = 'http://localhost/InteractiveMaps/js/inpollstreets.json';
 
-        //var url_get_anket = 'http://survey-archive.com/MSS/InfoTransportGetRouteAnket.php';
-        //var url_post_interview = 'http://survey-archive.com/MSS/MainGate.php';
-        //var url_inpoll_streets = 'http://survey-archive.com/InteractiveMaps/js/inpollstreets.json';
+        var url_get_anket = 'http://survey-archive.com/MSS/InfoTransportGetRouteAnket.php';
+        var url_post_interview = 'http://survey-archive.com/MSS/MainGate.php';
+        var url_inpoll_streets = 'http://survey-archive.com/InteractiveMaps/js/inpollstreets.json';
 
 
 
@@ -391,7 +391,7 @@
 
         };
         var addzero = function(el){
-            if(el <10) el ='0'+el;
+            if(el <10 && el > 0) el ='0'+el;
             return el;
         }
         function anketLoop(code){
@@ -495,6 +495,11 @@
                 $('#route_type_'+seq).on('keyup', function(e){
                     var temp =  $("#route_type_"+seq).val();
                     if(temp !== "")
+                    if(temp === "+"){
+                        $("#route_type_"+seq).val('0');
+                        selectTranspBeh();
+                    }
+                    else
                     if (e.which == 13) {
                         e.preventDefault();
                        selectTranspBeh();
@@ -538,7 +543,11 @@
                 $('#code_input_hours').on('keyup', function(e) {
                     var temp =  $("#code_input_hours").val();
                     if (temp !== ""){
-                       if(!withinIntConstraint(temp,0,24)) {
+                        if(e.which == 107|| e.which == 187){
+                            $("#code_input_hours").val('0');
+                            $("#code_input_minutes").focus();
+                        }else
+                        if(!withinIntConstraint(temp,0,24)) {
                             //e.preventDefault();
                             $("#code_input_hours").val('');
                             return;
@@ -547,17 +556,21 @@
                             e.preventDefault();
                             $("#code_input_minutes").focus();
                         }
+
                     }
                 });
                 $('#code_input_minutes').on('keyup', function(e) {
                     var temp =  $("#code_input_minutes").val();
                     if (temp !== ""){
+                        if(e.which == 107|| e.which == 187){
+                            $("#code_input_minutes").val('0');
+                        }else
                         if(!withinIntConstraint(temp,0,60)) {
                             //e.preventDefault();
                             $("#code_input_minutes").val('');
                             return;
                         }
-                        if (e.which == 13) {
+                        if (e.which == 13 || e.which == 107|| e.which == 187) {
                             e.preventDefault();
                             var val = addzero(parseInt($("#code_input_hours").val(),10))+":"+ addzero(parseInt($("#code_input_minutes").val(),10));
                            nextStep(code,val);
@@ -626,7 +639,9 @@
                     if (temp !== ""){
                         if (e.which == 13) {
                             e.preventDefault();
-                            var val =  $('#street_input').val()+" "+ $("#house_input").val();
+                            var val =  $('#street_input').val();
+                            var val2 =   $("#house_input").val();
+                            if(val2!=="")val = val+" "+val2;
                             current_interview[code] = val;
                             $("#orient_input").focus();
                             //nextStep(code,val);
@@ -661,18 +676,21 @@
                         }
                         if (e.which == 107 || e.which == 187) {
                             e.preventDefault();
-                            var val =  $('#street_input').val();
+                            //var val =  $('#street_input').val();
 
                             if(temp === "+"){
-                                if(val !== ""){
+                                //if(val !== ""){
                                     $("#orient_input").val('');
-                                    var val =  $('#street_input').val()+" "+ $("#house_input").val();
+                                    var val =  $('#street_input').val();
+                                    var val2 =   $("#house_input").val();
+                                    if(val2!=="")val = val+" "+val2;
+
                                     //current_interview[code] = val;
                                     nextStep(code,val);
-                                }else{
-                                    e.preventDefault();
-                                    $("#orient_input").focus();
-                                }
+                                //}else{
+                                //    e.preventDefault();
+                                //    $("#orient_input").focus();
+                                //}
                             }
 
                         }
@@ -704,13 +722,17 @@
 
                     var temp =  $("#code_input").val();
                     if (temp !== ""){
+                        if (e.which == 107 || e.which == 187) {
+                            //e.preventDefault();
+                            $("#code_input").val('');
+                        }else
                         if(curr_type === "defined"){
                             if(!withinDefConstraint(temp,def_constraint)) {
                                 //e.preventDefault();
                                 $("#code_input").val('');
                                 return;
                             }
-                        }
+                        }else
                         if(curr_type === "integer"){
                             if(!withinIntConstraint(temp,curr_elem["range_min"],curr_elem["range_max"])) {
                                 //e.preventDefault();
@@ -718,7 +740,8 @@
                                 return;
                             }
                         }
-                        if (e.which == 13) {
+
+                        if (e.which == 13 || e.which == 107 || e.which == 187) {
                             e.preventDefault();
 
                             var val = $("#code_input").val();
