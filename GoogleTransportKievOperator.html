@@ -1078,6 +1078,10 @@
                         '<method name = "sitTask" TASK="'+task_id+'" ANSWER="'+anket_ans+'" USERID ="'+login+'" PSWD="default"/>'+
                     '</RQ>';
             console.log(xml);
+            repeatablePostServer(xml);
+
+        }
+        function repeatablePostServer(xml){
             $.ajax({
                         type:"POST",
                         url:url_post_interview,
@@ -1088,7 +1092,11 @@
                             console.log(data);
                         },
                         error:function(data){
-                            alert("Ошибка, сообщите администратору: "+JSON.stringify(data));
+                            var info = confirm("Сервер временно недоступен, повторить отправку?")
+                            if(info){
+                                repeatablePostServer(xml);
+                            }else
+                                alert("Ошибка, сообщите администратору: "+JSON.stringify(data));
                         }
                     }
             );
