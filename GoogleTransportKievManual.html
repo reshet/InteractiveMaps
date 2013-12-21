@@ -95,11 +95,32 @@
         var skipped_addresses = 0;
 
         var hasChanged = false;
-        var loadNext = function(){
+        var addzero = function(el){
+            if(el <10 && el > 0) el ='0'+el;
+            return el;
+        }
+        var formatDate = function(datetime){
+            var start_date = new Date(datetime);
+            var month = addzero(start_date.getMonth()+1);
+            var day = addzero(start_date.getDate());
+            var hours = addzero(start_date.getHours());
+            var minutes = addzero(start_date.getMinutes());
+            var seconds = addzero(start_date.getSeconds());
+            var mseconds = addzero(start_date.getMilliseconds());
 
+            var year = 1900+start_date.getYear();
+
+            start_date = day+"."+month+"."+year+" "+hours+":"+minutes+":"+seconds+":"+mseconds;
+            return start_date;
+        };
+        var loadNext = function(){
+            var curr = new Date().getTime();
+            console.log("Start loading next address "+formatDate(curr));
             $.getJSON(url_fixer_get, function(data) {
                 //alert(data);
-                console.log("loading next address...");
+                var curr = new Date().getTime();
+                console.log("Next address. Server returned data"+formatDate(curr));
+                //console.log("loading next address...");
 
                 //alert(val)
                 var val = data[0];
@@ -143,6 +164,9 @@
                 total_addresses++;
                 $("#stat_total").text(''+total_addresses);
                 hasChanged = false;
+
+                var curr = new Date().getTime();
+                console.log("loading next address. Data prepared "+formatDate(curr));
                 //if(elem < 2){
                 /* $.ajax({
                  type:"POST",
@@ -339,6 +363,8 @@
                 }
                 if(res){
                     console.log("Saving");
+                    var curr = new Date().getTime();
+                    console.log("Start saving address "+formatDate(curr));
                     if(hasChanged){
                         codeLatLng( new google.maps.LatLng(marker_lat,marker_lng),function(loc){
                             //console.log(loc);
@@ -349,6 +375,8 @@
                             console.log(g_address);
                             var loc_type = location["loc_type"];
 
+                            var curr = new Date().getTime();
+                            console.log("Start saving address "+formatDate(curr));
                             actualServerUpdate(g_address,latitude,longitude,login,"MANUAL");
                         });
                     }else{
@@ -362,6 +390,8 @@
 
         }
         function actualServerUpdate(address,lat,lng,login,status){
+            var curr = new Date().getTime();
+            console.log("Start saving address ajax "+formatDate(curr));
             $.ajax({
                         type:"POST",
                         url:url_fixer_save,
@@ -371,6 +401,8 @@
                         },
                         success:function(data){
                             console.log(data);
+                            var curr = new Date().getTime();
+                            console.log("Returned saving address ajax "+formatDate(curr));
                             commitSave(status);
                         },
                         error:function(data){
@@ -447,7 +479,6 @@
            </td>
        </tr>
     </table>
-
 </div>
 <div id="panel_session">
     <table>

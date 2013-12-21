@@ -112,8 +112,8 @@
         var inpoll_streets;
         var street_codes_constraint = [];
         var current_stops;
-        var stops_var_code_1;
-        var stops_var_code_2;
+        var stops_var_code_one = null;
+        var stops_var_code_two = null;
         var getTextFromMeta = function(code){
             console.log(code);
             return current_anket_meta[code]["question"];
@@ -134,10 +134,10 @@
                     shorttext: "Час початку"
                 },
                 {
-                    code:stops_var_code_1,
+                    code:stops_var_code_one,
                     shorttext: "Зайшли",
                     type:"defined",
-                    alternatives:getAltsFromMeta(stops_var_code_1)
+                    alternatives:getAltsFromMeta(stops_var_code_one)
                 },
                 {
                     code:"Q2",
@@ -154,10 +154,10 @@
                     multi:true
                 },
                 {
-                    code:stops_var_code_2,
+                    code:stops_var_code_two,
                     shorttext: "Вийдете",
                     type:"defined",
-                    alternatives:getAltsFromMeta(stops_var_code_2)
+                    alternatives:getAltsFromMeta(stops_var_code_two)
                 },
                 {
                     code:"Q9",
@@ -234,7 +234,7 @@
                 }
             ];
             //console.log("here");
-            //console.log(anket_logic);
+            console.log(anket_logic);
         }
 
         var current_interview = {};
@@ -249,6 +249,7 @@
 
             if(transp_type === prev_route_type && transp_number === prev_route){
                 initAnketLogic();
+
                 startAnket();
                 return;
             }
@@ -268,32 +269,41 @@
                      //console.log(some);
                      var sss = some["question"];
                      //console.log(sss);
-                     if(sss.indexOf("_") !=-1 && (sss.indexOf("A")!=-1 || sss.indexOf("B")!=-1 || sss.indexOf("C")!=-1 || sss.indexOf("D")!=-1)){
-                         if(sss.indexOf(transp_number)!=-1){
+                     if(ss.indexOf("_") !=-1 && (ss.indexOf("A")!=-1 || ss.indexOf("B")!=-1 || ss.indexOf("C")!=-1 || ss.indexOf("D")!=-1)){
+                         if(sss.indexOf(" "+transp_number)!=-1 && sss.indexOf("зайшли")!=-1 && stops_var_code_one === null){
 
                              //console.log(sss);
                              var alts = some["alternatives"]
                              current_stops = alts;
-                             for(var alt in current_stops){
+                            /* for(var alt in current_stops){
                                  //console.log(alts);
                                  //console.log(current_stops[alt]["id"]+" "+current_stops[alt]["text"])
-                             }
-                             stops_var_code_1 = ss;
-                             console.log(ss);
+                             }*/
+                             stops_var_code_one = ss;
+                             //console.log("code: "+ss);
+                             //console.log("stops_1: "+stops_var_code_one)
+                             //console.log("stops_2: "+stops_var_code_two)
+                             //break;
+                         }
+
+                     }else
+                     if(ss.indexOf("_") !=-1 && (ss.indexOf("K")!=-1 || ss.indexOf("L")!=-1 || ss.indexOf("M")!=-1 || ss.indexOf("N")!=-1)){
+                         if(sss.indexOf(" "+transp_number)!=-1 && sss.indexOf("вийти")!=-1  && stops_var_code_two === null){
+                             stops_var_code_two = ss;
+                             //console.log("code: "+ss);
+                             //console.log("stops_1: "+stops_var_code_one)
+                             //console.log("stops_2: "+stops_var_code_two)
                              //break;
                          }
 
                      }
-                     if(sss.indexOf("_") !=-1 && (sss.indexOf("K")!=-1 || sss.indexOf("L")!=-1 || sss.indexOf("M")!=-1 || sss.indexOf("N")!=-1)){
-                         if(sss.indexOf(transp_number)!=-1){
-                             stops_var_code_2 = ss;
-                             console.log(ss);
-                             //break;
-                         }
 
-                     }
+
 
                  }
+                console.log("stops_1: "+stops_var_code_one)
+                console.log("stops_2: "+stops_var_code_two)
+
                  if(current_anket_meta === null || current_stops === null) {
                      alert("Маршрут не найден!");
                      $("#panel_stops").empty();
@@ -415,6 +425,7 @@
             };
             $("#panel_stops").empty();
             if(curr_type==="defined") {
+                console.log(curr_elem);
                 showAlts(curr_elem["alternatives"],code)
 
                 for(var s in curr_elem["alternatives"]){
@@ -471,7 +482,12 @@
                         if(code === anket_logic[anket_logic.length-1].code){
                             finishInterview();
                         }else{
-                            anketLoop(anket_logic[++curr_elem_index]["code"]);
+                            console.log("anket index before "+curr_elem_index)
+
+                            ++curr_elem_index
+                            console.log("anket loop to "+anket_logic[curr_elem_index]["code"])
+                            console.log("anket index after "+curr_elem_index)
+                            anketLoop(anket_logic[curr_elem_index]["code"]);
                         }
                     }
                     else if(r_type !== "-1")$("#transp_n_"+seq).focus();
@@ -767,6 +783,18 @@
 
         };
 
+        var formatDate = function(datetime){
+            var start_date = new Date(datetime);
+            var month = addzero(start_date.getMonth()+1);
+            var day = addzero(start_date.getDate());
+            var hours = addzero(start_date.getHours());
+            var minutes = addzero(start_date.getMinutes());
+            var seconds = addzero(start_date.getSeconds());
+            var year = 1900+start_date.getYear();
+
+            start_date = day+"."+month+"."+year+" "+hours+":"+minutes+":"+seconds;
+            return start_date;
+        };
         function finilizeInterview(){
            var time = current_interview["START_TIME_1"];
            var month = addzero(parseInt($("#date_month").val(),10));
@@ -778,18 +806,7 @@
            /*var start_date = new Date(curr_start).formatted("yyyy-mm-dd h:mm:ss")
            var finish_date = new Date(curr_finish).formatted("yyyy-mm-dd h:mm:ss")
 */
-            var formatDate = function(datetime){
-                var start_date = new Date(datetime);
-                var month = addzero(start_date.getMonth()+1);
-                var day = addzero(start_date.getDate());
-                var hours = addzero(start_date.getHours());
-                var minutes = addzero(start_date.getMinutes());
-                var seconds = addzero(start_date.getSeconds());
-                var year = 1900+start_date.getYear();
 
-                start_date = day+"."+month+"."+year+" "+hours+":"+minutes+":"+seconds;
-                return start_date;
-            }
 
 
             //finish_date = finish_date.toString('yyyy-mm-dd')+" "+finish_date.toTimeString();
@@ -824,11 +841,11 @@
             $("#quest_text").text('');
             $("#panel_stops").html('');
 
-            curr_elem_index = 0;
+
             var timespent = Math.floor((curr_finish-curr_start)/1000);
             addLogRecord(total_ints_done,timespent);
             actualServerPostInterview(current_interview, $("#login").val(),task_id);
-            current_interview = {};
+
 
         };
         function initialize() {
@@ -1057,6 +1074,12 @@
             }
 
         }
+        function safeInputString(str){
+            str = str+'';
+            str = str.split('"').join(" ");
+            str = str.split("'").join(" ");
+            return str;
+        }
         function actualServerPostInterview(interview,login,task_id){
             function encode_utf8( s ) {
                 return unescape( encodeURIComponent( s ) );
@@ -1067,7 +1090,9 @@
             }
             var content = '';
             for(var s in interview){
-                content +=s+'="'+interview[s]+'" ';
+                var elem = interview[s];
+                elem = safeInputString(elem);
+                content +=s+'="'+elem+'" ';
             }
             var anket_ans = '<RQ><interview '+content+'/></RQ>';
             console.log(anket_ans);
@@ -1090,6 +1115,13 @@
                         dataType: "text",
                         success:function(data){
                             console.log(data);
+                            if(data.indexOf("NOK")!=-1){
+                                alert("Невозможно сохранить интервью. Проверьте свой логин: "+JSON.stringify(data));
+                            }else{
+                                curr_elem_index = 0;
+                                current_interview = {};
+                            }
+
                         },
                         error:function(data){
                             var info = confirm("Сервер временно недоступен, повторить отправку?")
